@@ -1,0 +1,12 @@
+body {
+  text-align: center;
+}
+
+#quote-content,
+#quote-author {
+  font-style: italic;
+}
+
+.hidden {
+  display: none;
+}
