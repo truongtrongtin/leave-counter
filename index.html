@@ -1,0 +1,29 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+
+    <title>Leave counter</title>
+    <meta name="description" content="Leave counter for Localize Direct VN's members" />
+    <meta name="author" content="Tin Truong" />
+
+    <link rel="icon" href="favicon.ico" />
+    <link rel="stylesheet" href="style.css" />
+  </head>
+
+  <body>
+    <h1>Localize Direct VN leave counter</h1>
+    <button id="get-leave-count-btn" class="hidden" onclick="getLeaveCount();">Count my leaves now!</button>
+    <div id="logged-in-section" class="hidden">
+      <p id="welcome"></p>
+      <img id="avatar" src="" alt="avatar" />
+      <p id="leave-count"></p>
+      <p id="error-message"></p>
+      <p id="quote-content"></p>
+      <p id="quote-author"></p>
+      <button onclick="oauth2SignOut();">Sign out</button>
+    </div>
+    <script src="script.js"></script>
+  </body>
+</html>
