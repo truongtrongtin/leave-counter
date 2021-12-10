@@ -1,7 +1,5 @@
 let currentUser;
 const CLIENT_ID = "96573011708-9klhchl789tnlp1tvl4iv0ni2ps3akur.apps.googleusercontent.com";
-// const REDIRECT_URI = "http://localhost:8000";
-const REDIRECT_URI = "https://leave-counter.tintruong.ga";
 const CALENDAR_ID = "localizedirect.com_jeoc6a4e3gnc1uptt72bajcni8@group.calendar.google.com";
 const members = [
   { email: "dng@localizedirect.com", possibleNames: ["duong"] },
@@ -151,7 +149,7 @@ function oauth2SignIn() {
   const oauth2Endpoint = "https://accounts.google.com/o/oauth2/v2/auth";
   const oauth2Query = new URLSearchParams({
     client_id: CLIENT_ID,
-    redirect_uri: REDIRECT_URI,
+    redirect_uri: location.href.replace(/\/$/, ""),
     scope: "profile email https://www.googleapis.com/auth/calendar.events.readonly",
     state: csrfToken,
     response_type: "token",
