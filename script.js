@@ -156,15 +156,8 @@ function oauth2SignIn() {
   location = `${oauth2Endpoint}?${oauth2Query}`;
 }
 
-async function oauth2SignOut() {
-  const params = JSON.parse(localStorage.getItem("oauth2-params"));
-  try {
-    const query = new URLSearchParams({ token: params["access_token"] }).toString();
-    await fetch(`https://oauth2.googleapis.com/revoke?${query}`, { method: "POST" });
-    document.getElementById("get-leave-count-btn").classList.remove("hidden");
-    document.getElementById("logged-in-section").classList.add("hidden");
-    localStorage.removeItem("oauth2-params");
-  } catch (error) {
-    console.log(error.message);
-  }
+function oauth2SignOut() {
+  localStorage.removeItem("oauth2-params");
+  document.getElementById("get-leave-count-btn").classList.remove("hidden");
+  document.getElementById("logged-in-section").classList.add("hidden");
 }
