@@ -2,7 +2,6 @@ let currentUser;
 const CLIENT_ID = "96573011708-9klhchl789tnlp1tvl4iv0ni2ps3akur.apps.googleusercontent.com";
 // const REDIRECT_URI = "http://localhost:8000";
 const REDIRECT_URI = "https://leave-counter.tintruong.ga";
-const STATE = "leave_counter";
 const CALENDAR_ID = "localizedirect.com_jeoc6a4e3gnc1uptt72bajcni8@group.calendar.google.com";
 const members = [
   { email: "dng@localizedirect.com", possibleNames: ["duong"] },
@@ -39,11 +38,12 @@ if (isLoggedIn) {
 const hash = location.hash.substring(1);
 const params = Object.fromEntries(new URLSearchParams(hash));
 // Google oauth2 redirect handler, check state to mitigate csrf
-if (params && params["state"] === STATE) {
+if (params && params["state"] === localStorage.getItem("csrf-token")) {
   localStorage.setItem("oauth2-params", JSON.stringify(params));
   getMe();
   getLeaveCount();
   getRandomQuote();
+  localStorage.removeItem("csrf-token");
   history.replaceState({}, null, "/"); // Url cleanup
 }
 
@@ -145,12 +145,15 @@ async function getRandomQuote() {
 }
 
 function oauth2SignIn() {
+  // https://gist.github.com/6174/6062387
+  const csrfToken = Math.random().toString(36).substring(2, 15) + Math.random().toString(36).substring(2, 15);
+  localStorage.setItem("csrf-token", csrfToken);
   const oauth2Endpoint = "https://accounts.google.com/o/oauth2/v2/auth";
   const oauth2Query = new URLSearchParams({
     client_id: CLIENT_ID,
     redirect_uri: REDIRECT_URI,
     scope: "profile email https://www.googleapis.com/auth/calendar.events.readonly",
-    state: STATE,
+    state: csrfToken,
     response_type: "token",
   }).toString();
   location = `${oauth2Endpoint}?${oauth2Query}`;
