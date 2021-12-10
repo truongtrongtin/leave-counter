@@ -1,3 +1,7 @@
+// Detect system theme
+const theme = window.matchMedia("(prefers-color-scheme: dark)").matches ? "dark" : "light";
+document.documentElement.setAttribute("data-theme", theme);
+
 let currentUser;
 const CLIENT_ID = "96573011708-9klhchl789tnlp1tvl4iv0ni2ps3akur.apps.googleusercontent.com";
 const CALENDAR_ID = "localizedirect.com_jeoc6a4e3gnc1uptt72bajcni8@group.calendar.google.com";
