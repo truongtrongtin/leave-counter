@@ -3,7 +3,7 @@ const theme = window.matchMedia("(prefers-color-scheme: dark)").matches ? "dark"
 document.documentElement.setAttribute("data-theme", theme);
 
 let currentUser;
-const CLIENT_ID = "96573011708-9klhchl789tnlp1tvl4iv0ni2ps3akur.apps.googleusercontent.com";
+const CLIENT_ID = "81206403759-o2s2tkv3cl58c86njqh90crd8vnj6b82.apps.googleusercontent.com";
 const CALENDAR_ID = "localizedirect.com_jeoc6a4e3gnc1uptt72bajcni8@group.calendar.google.com";
 const members = [
   { email: "dng@localizedirect.com", possibleNames: ["duong"] },
@@ -15,14 +15,15 @@ const members = [
   { email: "kp@localizedirect.com", possibleNames: ["khanh", "khanh p"] },
   { email: "ld@localizedirect.com", possibleNames: ["lynh"] },
   { email: "ldv@localizedirect.com", possibleNames: ["long"] },
-  { email: "nnthanhthy2812@gmail.com", possibleNames: ["thy"] },
+  { email: "tnn@localizedirect.com", possibleNames: ["thy"] },
   { email: "pia@localizedirect.com", possibleNames: ["pia"] },
   { email: "pv@localizedirect.com", possibleNames: ["phu"] },
   { email: "qv@localizedirect.com", possibleNames: ["quang"] },
   { email: "sn@localizedirect.com", possibleNames: ["sang"] },
-  { email: "tc@localizedirect.com", possibleNames: ["tri truong", "tri t."] },
+  { email: "tc@localizedirect.com", possibleNames: ["tri truong", "tri t.", "steve"] },
   { email: "th@localizedirect.com", possibleNames: ["tan"] },
   { email: "tin@localizedirect.com", possibleNames: ["tin"] },
+  { email: "tlv@localizedirect.com", possibleNames: ["win"] },
   { email: "tn@localizedirect.com", possibleNames: ["truong"] },
   { email: "tri@localizedirect.com", possibleNames: ["tri"] },
   { email: "vtl@localizedirect.com", possibleNames: ["trong"] },
@@ -85,6 +86,7 @@ async function getLeaveCount() {
       access_token: params["access_token"],
       timeMin: new Date(currentYear, 0, 1).toISOString(),
       timeMax: new Date(currentYear + 1, 0, 1).toISOString(),
+      q: "off",
     }).toString();
     const eventListResponse = await fetch(`${eventListEndpoint}?${eventListQuery}`);
     const eventListData = await eventListResponse.json();
@@ -115,6 +117,7 @@ async function getLeaveCount() {
         }
       }
     }
+    console.log(leaveCountMap);
 
     let result = 0;
     const foundMember = members.find((member) => member.email === currentUser.email);
@@ -157,6 +160,7 @@ function oauth2SignIn() {
     scope: "profile email https://www.googleapis.com/auth/calendar.events.readonly",
     state: csrfToken,
     response_type: "token",
+    hd: "localizedirect.com",
   }).toString();
   location = `${oauth2Endpoint}?${oauth2Query}`;
 }
