@@ -32,6 +32,7 @@ const members = [
 const isLoggedIn = Boolean(localStorage.getItem("oauth2-params"));
 if (isLoggedIn) {
   getMe();
+  generateYearOptions();
   getLeaveCount();
   getRandomQuote();
 } else {
@@ -44,10 +45,23 @@ const params = Object.fromEntries(new URLSearchParams(hash));
 if (params && params["state"] === localStorage.getItem("csrf-token")) {
   localStorage.setItem("oauth2-params", JSON.stringify(params));
   getMe();
+  generateYearOptions();
   getLeaveCount();
   getRandomQuote();
   localStorage.removeItem("csrf-token");
   history.replaceState({}, null, "/"); // Url cleanup
+}
+
+function generateYearOptions() {
+  const yearSelectEl = document.getElementById("year-select");
+  const startYear = 2019;
+  const currentYear = new Date().getFullYear();
+  for (let y = startYear; y <= currentYear; y++) {
+    const option = document.createElement("option");
+    option.text = option.value = y;
+    if (y === currentYear) option.selected = true;
+    yearSelectEl.appendChild(option);
+  }
 }
 
 async function getMe() {
@@ -72,20 +86,22 @@ async function getLeaveCount() {
   const params = JSON.parse(localStorage.getItem("oauth2-params"));
   if (!params || !params["access_token"]) return oauth2SignIn();
 
-  const errorMessageElement = document.getElementById("error-message");
+  const selectedYear = Number(document.getElementById("year-select").value);
+  const resultEl = document.getElementById("leave-count");
+  const errorEl = document.getElementById("error-message");
   let dots = "";
   const loadingTimerId = setInterval(() => {
     dots += ".";
     if (dots.length === 11) dots = "";
-    errorMessageElement.innerHTML = `${dots} calculating ${dots}`;
+    resultEl.innerHTML = `${dots} calculating ${dots}`;
   }, 100);
+
   try {
     const eventListEndpoint = `https://www.googleapis.com/calendar/v3/calendars/${CALENDAR_ID}/events`;
-    const currentYear = new Date().getFullYear();
     const eventListQuery = new URLSearchParams({
       access_token: params["access_token"],
-      timeMin: new Date(currentYear, 0, 1).toISOString(),
-      timeMax: new Date(currentYear + 1, 0, 1).toISOString(),
+      timeMin: new Date(selectedYear, 0, 1).toISOString(),
+      timeMax: new Date(selectedYear + 1, 0, 1).toISOString(),
       q: "off",
     }).toString();
     const eventListResponse = await fetch(`${eventListEndpoint}?${eventListQuery}`);
@@ -117,24 +133,25 @@ async function getLeaveCount() {
         }
       }
     }
-    console.log(leaveCountMap);
 
     let result = 0;
     const foundMember = members.find((member) => member.email === currentUser.email);
     // Accumulate leave day by current user 's possible names
     if (foundMember) {
       for (const possibleName of foundMember.possibleNames) {
-        result += leaveCountMap[possibleName];
+        if (possibleName in leaveCountMap) {
+          result += leaveCountMap[possibleName];
+        }
       }
     }
     clearInterval(loadingTimerId);
-    errorMessageElement.innerHTML = "";
-    document.getElementById("leave-count").innerHTML = `Your total leaves in ${currentYear} is <b>${result}</b> days`;
+    errorEl.innerHTML = "";
+    resultEl.innerHTML = `<b>${result}</b> day(s)`;
   } catch (error) {
     console.log(error.message);
     clearInterval(loadingTimerId);
-    errorMessageElement.innerHTML = error.message;
-    errorMessageElement.style.color = "red";
+    errorEl.innerHTML = error.message;
+    errorEl.style.color = "red";
   }
 }
 
