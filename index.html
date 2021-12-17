@@ -14,15 +14,20 @@
 
   <body>
     <h1>Localize Direct VN leave counter</h1>
-    <button id="get-leave-count-btn" class="hidden" onclick="getLeaveCount();">Count my leaves now!</button>
+    <button id="get-leave-count-btn" class="hidden" onclick="getLeaveCount()">Count my leaves now!</button>
     <div id="logged-in-section" class="hidden">
       <p id="welcome"></p>
       <img id="avatar" src="" alt="avatar" />
+      <p>
+        <span>Your total leaves in</span>
+        <select id="year-select" onchange="getLeaveCount()"></select>
+        <span>is:</span>
+      </p>
       <p id="leave-count"></p>
       <p id="error-message"></p>
       <p id="quote-content"></p>
       <p id="quote-author"></p>
-      <button onclick="oauth2SignOut();">Sign out</button>
+      <button onclick="oauth2SignOut()">Sign out</button>
     </div>
     <script src="script.js"></script>
   </body>
