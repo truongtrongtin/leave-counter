@@ -126,7 +126,7 @@ async function getLeaveCount() {
       // Accumulate leave day in leaveCountMap
       for (const member of eventMembers) {
         const memberName = member.trim().toLowerCase();
-        if (memberName in leaveCountMap) {
+        if (leaveCountMap.hasOwnProperty(memberName)) {
           leaveCountMap[memberName] += count;
         } else {
           leaveCountMap[memberName] = count;
@@ -139,7 +139,7 @@ async function getLeaveCount() {
     // Accumulate leave day by current user 's possible names
     if (foundMember) {
       for (const possibleName of foundMember.possibleNames) {
-        if (possibleName in leaveCountMap) {
+        if (leaveCountMap.hasOwnProperty(possibleName)) {
           result += leaveCountMap[possibleName];
         }
       }
