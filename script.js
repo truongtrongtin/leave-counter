@@ -136,13 +136,15 @@ async function getLeaveCount() {
 
     let result = 0;
     const foundMember = members.find((member) => member.email === currentUser.email);
-    // Accumulate leave day by current user 's possible names
     if (foundMember) {
+      // Accumulate leave day by current user 's possible names
       for (const possibleName of foundMember.possibleNames) {
         if (leaveCountMap.hasOwnProperty(possibleName)) {
           result += leaveCountMap[possibleName];
         }
       }
+    } else {
+      result = leaveCountMap[currentUser.given_name.toLowerCase()];
     }
     clearInterval(loadingTimerId);
     errorEl.innerHTML = "";
@@ -151,6 +153,7 @@ async function getLeaveCount() {
     console.log(error.message);
     clearInterval(loadingTimerId);
     errorEl.innerHTML = error.message;
+    resultEl.innerHTML = "";
     errorEl.style.color = "red";
   }
 }
