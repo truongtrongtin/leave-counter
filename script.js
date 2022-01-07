@@ -15,7 +15,7 @@ const members = [
   { email: "kp@localizedirect.com", possibleNames: ["khanh", "khanh p"] },
   { email: "ld@localizedirect.com", possibleNames: ["lynh"] },
   { email: "ldv@localizedirect.com", possibleNames: ["long"] },
-  { email: "tnn@localizedirect.com", possibleNames: ["thy"] },
+  { email: "nn@localizedirect.com", possibleNames: ["nha", "andy"] },
   { email: "pia@localizedirect.com", possibleNames: ["pia"] },
   { email: "pv@localizedirect.com", possibleNames: ["phu"] },
   { email: "qv@localizedirect.com", possibleNames: ["quang"] },
@@ -25,7 +25,7 @@ const members = [
   { email: "tin@localizedirect.com", possibleNames: ["tin"] },
   { email: "tlv@localizedirect.com", possibleNames: ["win"] },
   { email: "tn@localizedirect.com", possibleNames: ["truong"] },
-  { email: "tri@localizedirect.com", possibleNames: ["tri"] },
+  { email: "tnn@localizedirect.com", possibleNames: ["thy"] },
   { email: "vtl@localizedirect.com", possibleNames: ["trong"] },
 ];
 
