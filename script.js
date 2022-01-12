@@ -112,14 +112,11 @@ async function getLeaveCount() {
     const leaveCountMap = {};
     const events = eventListData.items || [];
     for (const event of events) {
-      // Parse day part from event summary
-      const dayPart = event.summary.match(/morning|afternoon/g)?.[0] || "full";
-      const dayPartByNumber = dayPart === "full" ? 1 : 0.5;
+      const dayPart = /morning|afternoon/.test(event.summary) ? 0.5 : 1;
       const startDate = new Date(event.end.date).getTime();
       const endDate = new Date(event.start.date).getTime();
-      const diffTime = Math.abs(endDate - startDate);
-      const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
-      const count = diffDays * dayPartByNumber;
+      const diffDays = Math.ceil((startDate - endDate) / (24 * 60 * 60 * 1000));
+      const count = diffDays * dayPart;
 
       // Parse all members mentioned in event summary
       const eventMembers = event.summary.split("(off")[0].split(",");
