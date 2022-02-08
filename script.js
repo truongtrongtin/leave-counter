@@ -3,6 +3,7 @@ const theme = window.matchMedia("(prefers-color-scheme: dark)").matches ? "dark"
 document.documentElement.setAttribute("data-theme", theme);
 
 let currentUser;
+let lastLeaveCount;
 const CLIENT_ID = "81206403759-o2s2tkv3cl58c86njqh90crd8vnj6b82.apps.googleusercontent.com";
 const CALENDAR_ID = "localizedirect.com_jeoc6a4e3gnc1uptt72bajcni8@group.calendar.google.com";
 const members = [
@@ -11,12 +12,12 @@ const members = [
   { email: "gn@localizedirect.com", possibleNames: ["giang"] },
   { email: "hh@localizedirect.com", possibleNames: ["hieu huynh", "hieu h", "hieu h."] },
   { email: "hm@localizedirect.com", possibleNames: ["huong"] },
-  { email: "hn@localizedirect.com", possibleNames: ["hieu nguyen", "hieu ng", "hieu ng."] },
-  { email: "kp@localizedirect.com", possibleNames: ["khanh", "khanh p"] },
+  { email: "hn@localizedirect.com", possibleNames: ["hieu", "hieu nguyen", "hieu ng", "hieu ng."] },
+  { email: "kp@localizedirect.com", possibleNames: ["khanh", "khanh p", "khanh ph"] },
   { email: "ld@localizedirect.com", possibleNames: ["lynh"] },
   { email: "ldv@localizedirect.com", possibleNames: ["long"] },
   { email: "nn@localizedirect.com", possibleNames: ["nha", "andy"] },
-  { email: "pia@localizedirect.com", possibleNames: ["pia"] },
+  { email: "pia@localizedirect.com", possibleNames: ["pia", "huyen"] },
   { email: "pv@localizedirect.com", possibleNames: ["phu"] },
   { email: "qv@localizedirect.com", possibleNames: ["quang"] },
   { email: "sn@localizedirect.com", possibleNames: ["sang"] },
@@ -29,27 +30,32 @@ const members = [
   { email: "vtl@localizedirect.com", possibleNames: ["trong"] },
 ];
 
-const isLoggedIn = Boolean(localStorage.getItem("oauth2-params"));
-if (isLoggedIn) {
-  getMe();
-  generateYearOptions();
-  getLeaveCount();
-  getRandomQuote();
-} else {
-  document.getElementById("get-leave-count-btn").classList.remove("hidden");
-}
-
 const hash = location.hash.substring(1);
 const params = Object.fromEntries(new URLSearchParams(hash));
-// Google oauth2 redirect handler, check state to mitigate csrf
-if (params && params["state"] === localStorage.getItem("csrf-token")) {
+if (localStorage.getItem("oauth2-params")) {
+  // Has token case
+  main();
+} else if (params["state"] === localStorage.getItem("csrf-token")) {
+  // Google oauth2 redirect case, check state to mitigate csrf
   localStorage.setItem("oauth2-params", JSON.stringify(params));
-  getMe();
-  generateYearOptions();
-  getLeaveCount();
-  getRandomQuote();
   localStorage.removeItem("csrf-token");
   history.replaceState({}, null, "/"); // Url cleanup
+  main();
+} else {
+  document.getElementById("get-spent-leaves-btn").classList.remove("hidden");
+}
+
+async function main() {
+  await getMe();
+  if (!currentUser) {
+    oauth2SignOut();
+    oauth2SignIn();
+    return;
+  }
+  generateYearOptions();
+  getRandomQuote();
+  await getSpentLeaves();
+  getAvailableLeaves();
 }
 
 function generateYearOptions() {
@@ -70,24 +76,22 @@ async function getMe() {
     const userInfoQuery = new URLSearchParams({ access_token: params["access_token"] }).toString();
     const userInfoEndpoint = "https://www.googleapis.com/oauth2/v3/userinfo";
     const userInfoResponse = await fetch(`${userInfoEndpoint}?${userInfoQuery}`);
-    currentUser = await userInfoResponse.json();
-    if (!userInfoResponse.ok) throw new Error(currentUser.error_description);
-    document.getElementById("get-leave-count-btn").classList.add("hidden");
+    const userInfoJson = await userInfoResponse.json();
+    if (!userInfoResponse.ok) throw new Error(userInfoJson.error_description);
+    currentUser = userInfoJson;
+    document.getElementById("get-spent-leaves-btn").classList.add("hidden");
     document.getElementById("avatar").setAttribute("src", currentUser.picture);
     document.getElementById("welcome").innerHTML = `Welcome <b>${currentUser.given_name}</b>!`;
     document.getElementById("logged-in-section").classList.remove("hidden");
   } catch (error) {
     console.log(error.message);
-    oauth2SignOut();
   }
 }
 
-async function getLeaveCount() {
+async function getSpentLeaves() {
   const params = JSON.parse(localStorage.getItem("oauth2-params"));
-  if (!params || !params["access_token"]) return oauth2SignIn();
-
   const selectedYear = Number(document.getElementById("year-select").value);
-  const resultEl = document.getElementById("leave-count");
+  const resultEl = document.getElementById("spent-leaves");
   const errorEl = document.getElementById("error-message");
   let dots = "";
   const loadingTimerId = setInterval(() => {
@@ -143,9 +147,12 @@ async function getLeaveCount() {
     } else {
       result = leaveCountMap[currentUser.given_name.toLowerCase()];
     }
+    if (selectedYear === new Date().getFullYear()) {
+      lastLeaveCount = result;
+    }
     clearInterval(loadingTimerId);
     errorEl.innerHTML = "";
-    resultEl.innerHTML = `<b>${result}</b> day(s)`;
+    resultEl.innerHTML = result;
   } catch (error) {
     console.log(error.message);
     clearInterval(loadingTimerId);
@@ -166,6 +173,28 @@ async function getRandomQuote() {
   }
 }
 
+async function getAvailableLeaves() {
+  const params = JSON.parse(localStorage.getItem("oauth2-params"));
+  try {
+    const resultEl = document.getElementById("available-leaves");
+    let dots = "";
+    const loadingTimerId = setInterval(() => {
+      dots += ".";
+      if (dots.length === 11) dots = "";
+      resultEl.innerHTML = `${dots} calculating ${dots}`;
+    }, 100);
+    const availableLeavesQuery = new URLSearchParams({ access_token: params["access_token"] }).toString();
+    const availableLeavesEndpoint = "https://asia-southeast1-my-project-1540367072726.cloudfunctions.net/availableLeaves";
+    const availableLeavesResponse = await fetch(`${availableLeavesEndpoint}?${availableLeavesQuery}`);
+    const availableLeavesJson = await availableLeavesResponse.json();
+    clearInterval(loadingTimerId);
+    resultEl.innerHTML = Number((availableLeavesJson.availableLeaves - lastLeaveCount).toFixed(1));
+  } catch (error) {
+    console.log(error.message);
+    clearInterval(loadingTimerId);
+  }
+}
+
 function oauth2SignIn() {
   // https://gist.github.com/6174/6062387
   const csrfToken = Math.random().toString(36).substring(2, 15) + Math.random().toString(36).substring(2, 15);
@@ -183,7 +212,8 @@ function oauth2SignIn() {
 }
 
 function oauth2SignOut() {
+  currentUser = null;
   localStorage.removeItem("oauth2-params");
-  document.getElementById("get-leave-count-btn").classList.remove("hidden");
+  document.getElementById("get-spent-leaves-btn").classList.remove("hidden");
   document.getElementById("logged-in-section").classList.add("hidden");
 }
