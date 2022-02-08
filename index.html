@@ -14,16 +14,18 @@
 
   <body>
     <h1>Localize Direct VN leave counter</h1>
-    <button id="get-leave-count-btn" class="hidden" onclick="getLeaveCount()">Count my leaves now!</button>
+    <button id="get-spent-leaves-btn" class="hidden" onclick="main()">Count my leaves now!</button>
     <div id="logged-in-section" class="hidden">
       <p id="welcome"></p>
-      <img id="avatar" src="" alt="avatar" />
+      <img id="avatar" src="data:," alt="avatar" />
       <p>
-        <span>Your total leaves in</span>
-        <select id="year-select" onchange="getLeaveCount()"></select>
-        <span>is:</span>
+        <span>Spent days in</span>
+        <select id="year-select" onchange="getSpentLeaves()"></select>
+        <span>:</span>
       </p>
-      <p id="leave-count"></p>
+      <b id="spent-leaves"></b>
+      <p>Current available days:</p>
+      <b id="available-leaves"></b>
       <p id="error-message"></p>
       <p id="quote-content"></p>
       <p id="quote-author"></p>
