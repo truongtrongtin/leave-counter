@@ -17,6 +17,7 @@ const members = [
   { email: "ld@localizedirect.com", possibleNames: ["lynh"] },
   { email: "ldv@localizedirect.com", possibleNames: ["long"] },
   { email: "nn@localizedirect.com", possibleNames: ["nha", "andy"] },
+  { email: "nnc@localizedirect.com", possibleNames: ["cuong", "jason"] },
   { email: "pia@localizedirect.com", possibleNames: ["pia", "huyen"] },
   { email: "pv@localizedirect.com", possibleNames: ["phu"] },
   { email: "qv@localizedirect.com", possibleNames: ["quang"] },
