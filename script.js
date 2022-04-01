@@ -7,12 +7,12 @@ let lastLeaveCount;
 const CLIENT_ID = "81206403759-o2s2tkv3cl58c86njqh90crd8vnj6b82.apps.googleusercontent.com";
 const CALENDAR_ID = "localizedirect.com_jeoc6a4e3gnc1uptt72bajcni8@group.calendar.google.com";
 const members = [
+  { email: "cm@localizedirect.com", possibleNames: ["chau"] },
   { email: "dng@localizedirect.com", possibleNames: ["duong"] },
   { email: "dp@localizedirect.com", possibleNames: ["dung"] },
   { email: "gn@localizedirect.com", possibleNames: ["giang"] },
   { email: "hh@localizedirect.com", possibleNames: ["hieu huynh", "hieu h", "hieu h."] },
   { email: "hm@localizedirect.com", possibleNames: ["huong"] },
-  { email: "hn@localizedirect.com", possibleNames: ["hieu", "hieu nguyen", "hieu ng", "hieu ng."] },
   { email: "kp@localizedirect.com", possibleNames: ["khanh", "khanh p", "khanh ph"] },
   { email: "ld@localizedirect.com", possibleNames: ["lynh"] },
   { email: "ldv@localizedirect.com", possibleNames: ["long"] },
