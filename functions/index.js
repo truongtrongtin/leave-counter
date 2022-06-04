@@ -1,11 +1,11 @@
-const fetch = require("node-fetch");
+import fetch from "node-fetch";
 /**
  * Responds to any HTTP request.
  *
  * @param {!express:Request} req HTTP request context.
  * @param {!express:Response} res HTTP response context.
  */
-exports.availableLeaves = async (req, res) => {
+export function availableLeaves(req, res) {
   res.set("Access-Control-Allow-Origin", "*");
 
   const { access_token } = req.query;
@@ -46,4 +46,4 @@ exports.availableLeaves = async (req, res) => {
   const availableLeavesThisYear = Number(allAvailableLeavesThisYear[foundIndex]) || 0;
 
   res.status(200).json({ email: userInfo.email, availableLeaves: availableLeaves + availableLeavesThisYear });
-};
+}
