@@ -7,29 +7,29 @@ let lastLeaveCount;
 const CLIENT_ID = "81206403759-o2s2tkv3cl58c86njqh90crd8vnj6b82.apps.googleusercontent.com";
 const CALENDAR_ID = "localizedirect.com_jeoc6a4e3gnc1uptt72bajcni8@group.calendar.google.com";
 const members = [
-  { email: "cm@localizedirect.com", possibleNames: ["chau"] },
-  { email: "dng@localizedirect.com", possibleNames: ["duong"] },
-  { email: "dp@localizedirect.com", possibleNames: ["dung"] },
-  { email: "gn@localizedirect.com", possibleNames: ["giang"] },
-  { email: "hh@localizedirect.com", possibleNames: ["hieu huynh", "hieu h", "hieu h."] },
-  { email: "hm@localizedirect.com", possibleNames: ["huong"] },
-  { email: "kp@localizedirect.com", possibleNames: ["khanh", "khanh p", "khanh ph"] },
-  { email: "ld@localizedirect.com", possibleNames: ["lynh"] },
-  { email: "ldv@localizedirect.com", possibleNames: ["long"] },
-  { email: "nn@localizedirect.com", possibleNames: ["nha", "andy"] },
-  { email: "nnc@localizedirect.com", possibleNames: ["cuong", "jason"] },
-  { email: "pia@localizedirect.com", possibleNames: ["pia", "huyen"] },
-  { email: "pv@localizedirect.com", possibleNames: ["phu"] },
-  { email: "qv@localizedirect.com", possibleNames: ["quang"] },
-  { email: "sla@localizedirect.com", possibleNames: ["son"] },
-  { email: "sn@localizedirect.com", possibleNames: ["sang"] },
-  { email: "tc@localizedirect.com", possibleNames: ["tri truong", "tri t.", "steve"] },
-  { email: "th@localizedirect.com", possibleNames: ["tan"] },
-  { email: "tin@localizedirect.com", possibleNames: ["tin"] },
-  { email: "tlv@localizedirect.com", possibleNames: ["win"] },
-  { email: "tn@localizedirect.com", possibleNames: ["truong"] },
-  { email: "tnn@localizedirect.com", possibleNames: ["thy"] },
-  { email: "vtl@localizedirect.com", possibleNames: ["trong"] },
+  { email: "cm@localizedirect.com", possibleNames: ["Chau"] },
+  { email: "dng@localizedirect.com", possibleNames: ["Duong"] },
+  { email: "dp@localizedirect.com", possibleNames: ["Dung"] },
+  { email: "gn@localizedirect.com", possibleNames: ["Giang"] },
+  { email: "hh@localizedirect.com", possibleNames: ["Hieu H.", "Hieu Huynh", "Hieu H"] },
+  { email: "hm@localizedirect.com", possibleNames: ["Huong"] },
+  { email: "kp@localizedirect.com", possibleNames: ["Khanh", "Khanh P", "Khanh P."] },
+  { email: "ld@localizedirect.com", possibleNames: ["Lynh"] },
+  { email: "ldv@localizedirect.com", possibleNames: ["Long"] },
+  { email: "nn@localizedirect.com", possibleNames: ["Andy", "Nha"] },
+  { email: "nnc@localizedirect.com", possibleNames: ["Jason", "Cuong"] },
+  { email: "pia@localizedirect.com", possibleNames: ["Pia", "Huyen"] },
+  { email: "pv@localizedirect.com", possibleNames: ["Phu"] },
+  { email: "qv@localizedirect.com", possibleNames: ["Quang"] },
+  { email: "sla@localizedirect.com", possibleNames: ["Son"] },
+  { email: "sn@localizedirect.com", possibleNames: ["Sang"] },
+  { email: "tc@localizedirect.com", possibleNames: ["Steve", "Tri Truong", "Tri T."] },
+  { email: "th@localizedirect.com", possibleNames: ["Tan"] },
+  { email: "tin@localizedirect.com", possibleNames: ["Tin"] },
+  { email: "tlv@localizedirect.com", possibleNames: ["Win"] },
+  { email: "tn@localizedirect.com", possibleNames: ["Truong"] },
+  { email: "tnn@localizedirect.com", possibleNames: ["Thy"] },
+  { email: "vtl@localizedirect.com", possibleNames: ["Trong"] },
 ];
 
 const hash = location.hash.substring(1);
@@ -142,8 +142,9 @@ async function getSpentLeaves() {
     if (foundMember) {
       // Accumulate leave day by current user 's possible names
       for (const possibleName of foundMember.possibleNames) {
-        if (leaveCountMap.hasOwnProperty(possibleName)) {
-          result += leaveCountMap[possibleName];
+        const lowerCaseName = possibleName.toLowerCase();
+        if (leaveCountMap.hasOwnProperty(lowerCaseName)) {
+          result += leaveCountMap[lowerCaseName];
         }
       }
     } else {
