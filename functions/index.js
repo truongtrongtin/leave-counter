@@ -30,7 +30,7 @@ export function availableLeaves(req, res) {
 
   const sheetValuesQuery = new URLSearchParams();
   sheetValuesQuery.append("ranges", "B1:V1");
-  sheetValuesQuery.append("ranges", "B19:V19");
+  sheetValuesQuery.append("ranges", "B18:V18");
   sheetValuesQuery.append("ranges", "B22:V22");
   const sheetValuesResponse = await fetch(`https://sheets.googleapis.com/v4/spreadsheets/${process.env.SPREADSHEET_ID}/values:batchGet?${sheetValuesQuery.toString()}`, {
     headers: { Authorization: `Bearer ${tokenObject.access_token}` },
