@@ -29,9 +29,9 @@ export function availableLeaves(req, res) {
   if (!accessTokenResponse.ok) res.status(accessTokenResponse.status).json(tokenObject);
 
   const sheetValuesQuery = new URLSearchParams();
-  sheetValuesQuery.append("ranges", "B1:V1");
-  sheetValuesQuery.append("ranges", "B18:V18");
-  sheetValuesQuery.append("ranges", "B22:V22");
+  sheetValuesQuery.append("ranges", "1:1");
+  sheetValuesQuery.append("ranges", "18:18");
+  sheetValuesQuery.append("ranges", "22:22");
   const sheetValuesResponse = await fetch(`https://sheets.googleapis.com/v4/spreadsheets/${process.env.SPREADSHEET_ID}/values:batchGet?${sheetValuesQuery.toString()}`, {
     headers: { Authorization: `Bearer ${tokenObject.access_token}` },
   });
