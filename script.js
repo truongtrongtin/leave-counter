@@ -2,36 +2,35 @@
 const theme = window.matchMedia("(prefers-color-scheme: dark)").matches ? "dark" : "light";
 document.documentElement.setAttribute("data-theme", theme);
 
-let currentUser;
-let lastLeaveCount;
+let currentUser, lastLeaveCount, loadingTimerId;
 const CLIENT_ID = "81206403759-o2s2tkv3cl58c86njqh90crd8vnj6b82.apps.googleusercontent.com";
 const CALENDAR_ID = "localizedirect.com_jeoc6a4e3gnc1uptt72bajcni8@group.calendar.google.com";
 const members = [
-  { email: "cm@localizedirect.com", possibleNames: ["Chau"] },
-  { email: "dng@localizedirect.com", possibleNames: ["Duong Nguyen", "Duong"] },
-  { email: "dpn@localizedirect.com", possibleNames: ["Duong Phung"] },
-  { email: "dp@localizedirect.com", possibleNames: ["Dung"] },
-  { email: "gn@localizedirect.com", possibleNames: ["Giang"] },
-  { email: "hh@localizedirect.com", possibleNames: ["Hieu H.", "Hieu Huynh", "Hieu H"] },
-  { email: "hm@localizedirect.com", possibleNames: ["Huong"] },
-  { email: "kl@localizedirect.com", possibleNames: ["Khanh Le"] },
-  { email: "kp@localizedirect.com", possibleNames: ["Khanh Pham", "Khanh", "Khanh P", "Khanh P."] },
-  { email: "ld@localizedirect.com", possibleNames: ["Lynh"] },
-  { email: "ldv@localizedirect.com", possibleNames: ["Long"] },
-  { email: "nn@localizedirect.com", possibleNames: ["Andy", "Nha"] },
-  { email: "nnc@localizedirect.com", possibleNames: ["Jason", "Cuong"] },
-  { email: "pia@localizedirect.com", possibleNames: ["Pia", "Huyen"] },
-  { email: "pv@localizedirect.com", possibleNames: ["Phu"] },
-  { email: "qh@localizedirect.com", possibleNames: ["Quang Huynh"] },
-  { email: "qv@localizedirect.com", possibleNames: ["Quang Vo", "Quang"] },
-  { email: "sla@localizedirect.com", possibleNames: ["Son"] },
-  { email: "sn@localizedirect.com", possibleNames: ["Sang"] },
-  { email: "tc@localizedirect.com", possibleNames: ["Steve", "Tri Truong", "Tri T."] },
-  { email: "th@localizedirect.com", possibleNames: ["Tan"] },
-  { email: "tin@localizedirect.com", possibleNames: ["Tin"] },
-  { email: "tn@localizedirect.com", possibleNames: ["Truong"] },
-  { email: "tnn@localizedirect.com", possibleNames: ["Thy"] },
-  { email: "vtl@localizedirect.com", possibleNames: ["Trong"] },
+  { email: "cm@localizedirect.com", names: ["Chau"] },
+  { email: "dng@localizedirect.com", names: ["Duong Nguyen", "Duong"] },
+  { email: "dpn@localizedirect.com", names: ["Duong Phung"] },
+  { email: "dp@localizedirect.com", names: ["Dung"] },
+  { email: "gn@localizedirect.com", names: ["Giang"] },
+  { email: "hh@localizedirect.com", names: ["Hieu H.", "Hieu Huynh", "Hieu H"] },
+  { email: "hm@localizedirect.com", names: ["Huong"] },
+  { email: "kl@localizedirect.com", names: ["Khanh Le"] },
+  { email: "kp@localizedirect.com", names: ["Khanh Pham", "Khanh", "Khanh P", "Khanh P."] },
+  { email: "ld@localizedirect.com", names: ["Lynh"] },
+  { email: "ldv@localizedirect.com", names: ["Long"] },
+  { email: "nn@localizedirect.com", names: ["Andy", "Nha"] },
+  { email: "nnc@localizedirect.com", names: ["Jason", "Cuong"] },
+  { email: "pia@localizedirect.com", names: ["Pia", "Huyen"] },
+  { email: "pv@localizedirect.com", names: ["Phu"] },
+  { email: "qh@localizedirect.com", names: ["Quang Huynh"] },
+  { email: "qv@localizedirect.com", names: ["Quang Vo", "Quang"] },
+  { email: "sla@localizedirect.com", names: ["Son"] },
+  { email: "sn@localizedirect.com", names: ["Sang"] },
+  { email: "tc@localizedirect.com", names: ["Steve", "Tri Truong", "Tri T."] },
+  { email: "th@localizedirect.com", names: ["Tan"] },
+  { email: "tin@localizedirect.com", names: ["Tin"] },
+  { email: "tn@localizedirect.com", names: ["Truong"] },
+  { email: "tnn@localizedirect.com", names: ["Thy"] },
+  { email: "vtl@localizedirect.com", names: ["Trong"] },
 ];
 
 const hash = location.hash.substring(1);
@@ -77,7 +76,7 @@ function generateYearOptions() {
 async function getMe() {
   const params = JSON.parse(localStorage.getItem("oauth2-params"));
   try {
-    const userInfoQuery = new URLSearchParams({ access_token: params["access_token"] }).toString();
+    const userInfoQuery = new URLSearchParams({ access_token: params["access_token"] });
     const userInfoEndpoint = "https://www.googleapis.com/oauth2/v3/userinfo";
     const userInfoResponse = await fetch(`${userInfoEndpoint}?${userInfoQuery}`);
     const userInfoJson = await userInfoResponse.json();
@@ -92,13 +91,73 @@ async function getMe() {
   }
 }
 
+function getUserNames(email = currentUser.email) {
+  const foundMember = members.find((member) => member.email === email);
+  if (!foundMember) throw new Error("User not found");
+  return foundMember.names;
+}
+
+function generateTimeText(date) {
+  const day = new Date(date).toLocaleString("en-US", { day: "numeric", month: "short" });
+  const weekday = new Date(date).toLocaleString("en-US", { weekday: "short" });
+  return `${day} (${weekday})`;
+}
+
+function renderLeaveTable(events) {
+  const table = document.getElementById("detail-table");
+  // clear table
+  table.replaceChildren();
+
+  // table body
+  events.forEach((event) => {
+    const tr = table.insertRow();
+    let dayPartText = "",
+      dayPartCount = 0;
+    if (event.summary.includes("morning")) {
+      dayPartText = "Morning";
+      dayPartCount = 0.5;
+    } else if (event.summary.includes("afternoon")) {
+      dayPartText = "Afternoon";
+      dayPartCount = 0.5;
+    } else {
+      dayPartText = "All day";
+      dayPartCount = 1;
+    }
+    const diffDays = Math.ceil((new Date(event.end.date).getTime() - new Date(event.start.date).getTime()) / (24 * 60 * 60 * 1000));
+    const count = diffDays * dayPartCount;
+    const endDate = new Date(event.end.date);
+    endDate.setDate(endDate.getDate() - 1);
+    const reason = event.description ? JSON.parse(event.description).reason : "";
+
+    const columns = [];
+    columns.push(generateTimeText(event.start.date));
+    columns.push(generateTimeText(endDate));
+    columns.push(dayPartText);
+    columns.push(count);
+    columns.push(reason);
+
+    columns.forEach((column) => {
+      const td = tr.insertCell();
+      td.innerText = column;
+    });
+  });
+
+  // table header
+  const thead = table.createTHead();
+  const row = thead.insertRow(0);
+  ["Start", "End", "Type", "Count", "Description"].forEach((header, index) => {
+    cell = row.insertCell(index);
+    cell.outerHTML = `<th>${header}</th>`;
+  });
+}
+
 async function getSpentLeaves() {
   const params = JSON.parse(localStorage.getItem("oauth2-params"));
   const selectedYear = Number(document.getElementById("year-select").value);
   const resultEl = document.getElementById("spent-leaves");
   const errorEl = document.getElementById("error-message");
   let dots = "";
-  const loadingTimerId = setInterval(() => {
+  loadingTimerId = setInterval(() => {
     dots += ".";
     if (dots.length === 11) dots = "";
     resultEl.innerHTML = `${dots} calculating ${dots}`;
@@ -111,14 +170,15 @@ async function getSpentLeaves() {
       timeMin: new Date(selectedYear, 0, 1).toISOString(),
       timeMax: new Date(selectedYear + 1, 0, 1).toISOString(),
       q: "off",
-    }).toString();
+    });
     const eventListResponse = await fetch(`${eventListEndpoint}?${eventListQuery}`);
     const eventListData = await eventListResponse.json();
     if (!eventListResponse.ok) throw new Error(eventListData.error.message);
 
-    // Object to track leave count of each member
-    const leaveCountMap = {};
+    let leaveCount = 0;
     const events = eventListData.items || [];
+    const userEvents = [];
+    const userNames = getUserNames();
     for (const event of events) {
       const dayPart = /morning|afternoon/.test(event.summary) ? 0.5 : 1;
       const startDate = new Date(event.end.date).getTime();
@@ -128,36 +188,22 @@ async function getSpentLeaves() {
 
       // Parse all members mentioned in event summary
       const eventMembers = event.summary.split("(off")[0].split(",");
-      // Accumulate leave day in leaveCountMap
+      // Count leaves
       for (const member of eventMembers) {
         const memberName = member.trim().toLowerCase();
-        if (leaveCountMap.hasOwnProperty(memberName)) {
-          leaveCountMap[memberName] += count;
-        } else {
-          leaveCountMap[memberName] = count;
+        if (userNames.some((name) => name.toLowerCase() === memberName)) {
+          userEvents.push(event);
+          leaveCount += count;
         }
       }
     }
-
-    let result = 0;
-    const foundMember = members.find((member) => member.email === currentUser.email);
-    if (foundMember) {
-      // Accumulate leave day by current user 's possible names
-      for (const possibleName of foundMember.possibleNames) {
-        const lowerCaseName = possibleName.toLowerCase();
-        if (leaveCountMap.hasOwnProperty(lowerCaseName)) {
-          result += leaveCountMap[lowerCaseName];
-        }
-      }
-    } else {
-      result = leaveCountMap[currentUser.given_name.toLowerCase()];
-    }
+    renderLeaveTable(userEvents);
     if (selectedYear === new Date().getFullYear()) {
-      lastLeaveCount = result;
+      lastLeaveCount = leaveCount;
     }
     clearInterval(loadingTimerId);
     errorEl.innerHTML = "";
-    resultEl.innerHTML = result;
+    resultEl.innerHTML = leaveCount;
   } catch (error) {
     console.log(error.message);
     clearInterval(loadingTimerId);
@@ -183,12 +229,12 @@ async function getAvailableLeaves() {
   try {
     const resultEl = document.getElementById("available-leaves");
     let dots = "";
-    const loadingTimerId = setInterval(() => {
+    loadingTimerId = setInterval(() => {
       dots += ".";
       if (dots.length === 11) dots = "";
       resultEl.innerHTML = `${dots} calculating ${dots}`;
     }, 100);
-    const availableLeavesQuery = new URLSearchParams({ access_token: params["access_token"] }).toString();
+    const availableLeavesQuery = new URLSearchParams({ access_token: params["access_token"] });
     const availableLeavesEndpoint = "https://asia-southeast1-my-project-1540367072726.cloudfunctions.net/availableLeaves";
     const availableLeavesResponse = await fetch(`${availableLeavesEndpoint}?${availableLeavesQuery}`);
     const availableLeavesJson = await availableLeavesResponse.json();
@@ -212,7 +258,7 @@ function oauth2SignIn() {
     state: csrfToken,
     response_type: "token",
     hd: "localizedirect.com",
-  }).toString();
+  });
   location = `${oauth2Endpoint}?${oauth2Query}`;
 }
 

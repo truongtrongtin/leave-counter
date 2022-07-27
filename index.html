@@ -17,14 +17,18 @@
     <button id="get-spent-leaves-btn" class="hidden" onclick="main()">Count my leaves now!</button>
     <div id="logged-in-section" class="hidden">
       <p id="welcome"></p>
-      <img id="avatar" src="data:," alt="avatar" />
+      <img id="avatar" src="data:," alt="avatar" width="100" height="100" />
       <p>
         <span>Spent days in</span>
         <select id="year-select" onchange="getSpentLeaves()"></select>
         <span>:</span>
       </p>
       <b id="spent-leaves"></b>
-      <p>Current available days:</p>
+      <details open>
+        <summary>Details</summary>
+        <table id="detail-table"></table>
+      </details>
+      <p>Available days:</p>
       <b id="available-leaves"></b>
       <p id="error-message"></p>
       <p id="quote-content"></p>

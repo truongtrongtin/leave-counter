@@ -20,6 +20,7 @@ body {
   text-align: center;
   background: var(--background-color);
   color: var(--text-color);
+  font-family: sans-serif;
 }
 
 #quote-content,
@@ -29,4 +30,20 @@ body {
 
 .hidden {
   display: none;
+}
+
+details {
+  margin-top: 10px;
+}
+
+#detail-table {
+  margin: auto;
+  margin-top: 10px;
+  border-collapse: collapse;
+}
+
+#detail-table th,
+td {
+  border: 1px solid var(--text-color);
+  padding: 5px 10px;
 }
