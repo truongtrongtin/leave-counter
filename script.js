@@ -76,12 +76,12 @@ function generateYearOptions() {
 async function getMe() {
   const params = JSON.parse(localStorage.getItem("oauth2-params"));
   try {
-    const userInfoQuery = new URLSearchParams({ access_token: params["access_token"] });
-    const userInfoEndpoint = "https://www.googleapis.com/oauth2/v3/userinfo";
-    const userInfoResponse = await fetch(`${userInfoEndpoint}?${userInfoQuery}`);
-    const userInfoJson = await userInfoResponse.json();
-    if (!userInfoResponse.ok) throw new Error(userInfoJson.error_description);
-    currentUser = userInfoJson;
+    const query = new URLSearchParams({ access_token: params["access_token"] });
+    const endpoint = "https://www.googleapis.com/oauth2/v3/userinfo";
+    const response = await fetch(`${endpoint}?${query}`);
+    const userInfo = await response.json();
+    if (!response.ok) throw new Error(userInfo.error_description);
+    currentUser = userInfo;
     document.getElementById("get-spent-leaves-btn").classList.add("hidden");
     document.getElementById("avatar").setAttribute("src", currentUser.picture);
     document.getElementById("welcome").innerHTML = `Welcome <b>${currentUser.given_name}</b>!`;
@@ -123,14 +123,15 @@ function renderLeaveTable(events) {
       dayPartText = "All day";
       dayPartCount = 1;
     }
-    const diffDays = Math.ceil((new Date(event.end.date).getTime() - new Date(event.start.date).getTime()) / (24 * 60 * 60 * 1000));
-    const count = diffDays * dayPartCount;
+    const startDate = new Date(event.start.date);
     const endDate = new Date(event.end.date);
+    const diffDays = Math.ceil((endDate.getTime() - startDate.getTime()) / (24 * 60 * 60 * 1000));
+    const count = diffDays * dayPartCount;
     endDate.setDate(endDate.getDate() - 1);
     const reason = event.description ? JSON.parse(event.description).reason : "";
 
     const columns = [];
-    columns.push(generateTimeText(event.start.date));
+    columns.push(generateTimeText(startDate));
     columns.push(generateTimeText(endDate));
     columns.push(dayPartText);
     columns.push(count);
@@ -164,19 +165,19 @@ async function getSpentLeaves() {
   }, 100);
 
   try {
-    const eventListEndpoint = `https://www.googleapis.com/calendar/v3/calendars/${CALENDAR_ID}/events`;
-    const eventListQuery = new URLSearchParams({
+    const endpoint = `https://www.googleapis.com/calendar/v3/calendars/${CALENDAR_ID}/events`;
+    const query = new URLSearchParams({
       access_token: params["access_token"],
       timeMin: new Date(selectedYear, 0, 1).toISOString(),
       timeMax: new Date(selectedYear + 1, 0, 1).toISOString(),
       q: "off",
     });
-    const eventListResponse = await fetch(`${eventListEndpoint}?${eventListQuery}`);
-    const eventListData = await eventListResponse.json();
-    if (!eventListResponse.ok) throw new Error(eventListData.error.message);
+    const response = await fetch(`${endpoint}?${query}`);
+    const data = await response.json();
+    if (!response.ok) throw new Error(data.error.message);
 
     let leaveCount = 0;
-    const events = eventListData.items || [];
+    const events = data.items || [];
     const userEvents = [];
     const userNames = getUserNames();
     for (const event of events) {
@@ -215,8 +216,8 @@ async function getSpentLeaves() {
 
 async function getRandomQuote() {
   try {
-    const quoteResponse = await fetch("https://api.quotable.io/random");
-    const quote = await quoteResponse.json();
+    const response = await fetch("https://api.quotable.io/random");
+    const quote = await response.json();
     document.getElementById("quote-content").innerHTML = quote.content;
     document.getElementById("quote-author").innerHTML = quote.author;
   } catch (error) {
@@ -234,12 +235,12 @@ async function getAvailableLeaves() {
       if (dots.length === 11) dots = "";
       resultEl.innerHTML = `${dots} calculating ${dots}`;
     }, 100);
-    const availableLeavesQuery = new URLSearchParams({ access_token: params["access_token"] });
-    const availableLeavesEndpoint = "https://asia-southeast1-my-project-1540367072726.cloudfunctions.net/availableLeaves";
-    const availableLeavesResponse = await fetch(`${availableLeavesEndpoint}?${availableLeavesQuery}`);
-    const availableLeavesJson = await availableLeavesResponse.json();
+    const query = new URLSearchParams({ access_token: params["access_token"] });
+    const endpoint = "https://asia-southeast1-my-project-1540367072726.cloudfunctions.net/availableLeaves";
+    const response = await fetch(`${endpoint}?${query}`);
+    const availableLeaves = await response.json();
     clearInterval(loadingTimerId);
-    resultEl.innerHTML = Number((availableLeavesJson.availableLeaves - lastLeaveCount).toFixed(1));
+    resultEl.innerHTML = Number((availableLeaves.availableLeaves - lastLeaveCount).toFixed(1));
   } catch (error) {
     console.log(error.message);
     clearInterval(loadingTimerId);
@@ -250,8 +251,8 @@ function oauth2SignIn() {
   // https://gist.github.com/6174/6062387
   const csrfToken = Math.random().toString(36).substring(2, 15) + Math.random().toString(36).substring(2, 15);
   localStorage.setItem("csrf-token", csrfToken);
-  const oauth2Endpoint = "https://accounts.google.com/o/oauth2/v2/auth";
-  const oauth2Query = new URLSearchParams({
+  const endpoint = "https://accounts.google.com/o/oauth2/v2/auth";
+  const query = new URLSearchParams({
     client_id: CLIENT_ID,
     redirect_uri: location.href.replace(/\/$/, ""),
     scope: "profile email https://www.googleapis.com/auth/calendar.events.readonly",
@@ -259,7 +260,7 @@ function oauth2SignIn() {
     response_type: "token",
     hd: "localizedirect.com",
   });
-  location = `${oauth2Endpoint}?${oauth2Query}`;
+  location = `${endpoint}?${query}`;
 }
 
 function oauth2SignOut() {
