@@ -131,13 +131,7 @@ function renderLeaveTable(events) {
     endDate.setDate(endDate.getDate() - 1);
     const reason = event.description ? JSON.parse(event.description).reason : "";
 
-    const columns = [];
-    columns.push(generateTimeText(startDate));
-    columns.push(generateTimeText(endDate));
-    columns.push(dayPartText);
-    columns.push(count);
-    columns.push(reason);
-
+    const columns = [generateTimeText(startDate), generateTimeText(endDate), dayPartText, count, reason];
     columns.forEach((column) => {
       const td = tr.insertCell();
       td.innerText = column;
