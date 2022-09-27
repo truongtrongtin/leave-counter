@@ -1,20 +1,19 @@
+import * as functions from "@google-cloud/functions-framework";
 import fetch from "node-fetch";
-/**
- * Responds to any HTTP request.
- *
- * @param {!express:Request} req HTTP request context.
- * @param {!express:Response} res HTTP response context.
- */
-export function availableLeaves(req, res) {
+
+functions.http("availableLeaves", async (req, res) => {
   res.set("Access-Control-Allow-Origin", "*");
 
   const { access_token } = req.query;
-  const userInfoQuery = new URLSearchParams({ access_token }).toString();
+  const userInfoQuery = new URLSearchParams({ access_token });
   const userInfoEndpoint = "https://www.googleapis.com/oauth2/v3/userinfo";
   const userInfoResponse = await fetch(`${userInfoEndpoint}?${userInfoQuery}`);
   const userInfo = await userInfoResponse.json();
+  if (!userInfoResponse.ok) {
+    res.status(userInfoResponse.status).json(userInfo);
+    return;
+  }
   console.log(userInfo.name);
-  if (!userInfoResponse.ok) res.status(userInfoResponse.status).json(userInfo);
 
   const accessTokenResponse = await fetch("https://oauth2.googleapis.com/token", {
     method: "POST",
@@ -26,17 +25,23 @@ export function availableLeaves(req, res) {
     }),
   });
   const tokenObject = await accessTokenResponse.json();
-  if (!accessTokenResponse.ok) res.status(accessTokenResponse.status).json(tokenObject);
+  if (!accessTokenResponse.ok) {
+    res.status(accessTokenResponse.status).json(tokenObject);
+    return;
+  }
 
   const sheetValuesQuery = new URLSearchParams();
   sheetValuesQuery.append("ranges", "1:1");
   sheetValuesQuery.append("ranges", "18:18");
   sheetValuesQuery.append("ranges", "22:22");
-  const sheetValuesResponse = await fetch(`https://sheets.googleapis.com/v4/spreadsheets/${process.env.SPREADSHEET_ID}/values:batchGet?${sheetValuesQuery.toString()}`, {
+  const sheetValuesResponse = await fetch(`https://sheets.googleapis.com/v4/spreadsheets/${process.env.SPREADSHEET_ID}/values:batchGet?${sheetValuesQuery}`, {
     headers: { Authorization: `Bearer ${tokenObject.access_token}` },
   });
   const sheetValues = await sheetValuesResponse.json();
-  if (!sheetValuesResponse.ok) res.status(sheetValuesResponse.status).json(tokenObject);
+  if (!sheetValuesResponse.ok) {
+    res.status(sheetValuesResponse.status).json(tokenObject);
+    return;
+  }
 
   const memberCodes = sheetValues.valueRanges[0].values[0];
   const allAvailableLeaves = sheetValues.valueRanges[1].values[0];
@@ -46,4 +51,4 @@ export function availableLeaves(req, res) {
   const availableLeavesThisYear = Number(allAvailableLeavesThisYear[foundIndex]) || 0;
 
   res.status(200).json({ email: userInfo.email, availableLeaves: availableLeaves + availableLeavesThisYear });
-}
+});

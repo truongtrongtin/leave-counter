@@ -231,7 +231,7 @@ async function getAvailableLeaves() {
       resultEl.innerHTML = `${dots} calculating ${dots}`;
     }, 100);
     const query = new URLSearchParams({ access_token: params["access_token"] });
-    const endpoint = "https://asia-southeast1-my-project-1540367072726.cloudfunctions.net/availableLeaves";
+    const endpoint = "https://available-leaves-yaxjnhmzuq-as.a.run.app";
     const response = await fetch(`${endpoint}?${query}`);
     const availableLeaves = await response.json();
     clearInterval(loadingTimerId);
