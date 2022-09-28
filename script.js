@@ -2,7 +2,7 @@
 const theme = window.matchMedia("(prefers-color-scheme: dark)").matches ? "dark" : "light";
 document.documentElement.setAttribute("data-theme", theme);
 
-let currentUser, lastLeaveCount, loadingTimerId;
+let currentUser, leaveCountThisYear;
 const CLIENT_ID = "81206403759-o2s2tkv3cl58c86njqh90crd8vnj6b82.apps.googleusercontent.com";
 const CALENDAR_ID = "localizedirect.com_jeoc6a4e3gnc1uptt72bajcni8@group.calendar.google.com";
 const members = [
@@ -58,8 +58,22 @@ async function main() {
   }
   generateYearOptions();
   getRandomQuote();
-  await getSpentLeaves();
-  getAvailableLeaves();
+
+  const resultEl = document.getElementById("available-leaves");
+  let dots = "";
+  const loadingTimerId = setInterval(() => {
+    dots += ".";
+    if (dots.length === 11) dots = "";
+    resultEl.innerHTML = `${dots} calculating ${dots}`;
+  }, 100);
+  try {
+    const [_, availableLeaves] = await Promise.all([getSpentLeaves(), getAvailableLeaves()]);
+    clearInterval(loadingTimerId);
+    resultEl.innerHTML = Number((availableLeaves - leaveCountThisYear).toFixed(1));
+  } catch (error) {
+    clearInterval(loadingTimerId);
+    console.log(error.message);
+  }
 }
 
 function generateYearOptions() {
@@ -104,7 +118,7 @@ function generateTimeText(date) {
   return `${day} (${weekday})`;
 }
 
-function renderLeaveTable(events) {
+function renderTable(events) {
   const table = document.getElementById("detail-table");
   // clear table
   table.replaceChildren();
@@ -153,7 +167,7 @@ async function getSpentLeaves() {
   const resultEl = document.getElementById("spent-leaves");
   const errorEl = document.getElementById("error-message");
   let dots = "";
-  loadingTimerId = setInterval(() => {
+  const loadingTimerId = setInterval(() => {
     dots += ".";
     if (dots.length === 11) dots = "";
     resultEl.innerHTML = `${dots} calculating ${dots}`;
@@ -193,9 +207,9 @@ async function getSpentLeaves() {
         }
       }
     }
-    renderLeaveTable(userEvents);
+    renderTable(userEvents);
     if (selectedYear === new Date().getFullYear()) {
-      lastLeaveCount = leaveCount;
+      leaveCountThisYear = leaveCount;
     }
     clearInterval(loadingTimerId);
     errorEl.innerHTML = "";
@@ -221,24 +235,15 @@ async function getRandomQuote() {
 }
 
 async function getAvailableLeaves() {
-  const params = JSON.parse(localStorage.getItem("oauth2-params"));
   try {
-    const resultEl = document.getElementById("available-leaves");
-    let dots = "";
-    loadingTimerId = setInterval(() => {
-      dots += ".";
-      if (dots.length === 11) dots = "";
-      resultEl.innerHTML = `${dots} calculating ${dots}`;
-    }, 100);
+    const params = JSON.parse(localStorage.getItem("oauth2-params"));
     const query = new URLSearchParams({ access_token: params["access_token"] });
     const endpoint = "https://available-leaves-yaxjnhmzuq-as.a.run.app";
     const response = await fetch(`${endpoint}?${query}`);
-    const availableLeaves = await response.json();
-    clearInterval(loadingTimerId);
-    resultEl.innerHTML = Number((availableLeaves.availableLeaves - lastLeaveCount).toFixed(1));
+    const json = await response.json();
+    return json.availableLeaves;
   } catch (error) {
-    console.log(error.message);
-    clearInterval(loadingTimerId);
+    throw error;
   }
 }
 
