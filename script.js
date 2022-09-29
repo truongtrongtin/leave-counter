@@ -3,6 +3,7 @@ const theme = window.matchMedia("(prefers-color-scheme: dark)").matches ? "dark"
 document.documentElement.setAttribute("data-theme", theme);
 
 let currentUser, leaveCountThisYear;
+const thisYear = new Date().getFullYear();
 const CLIENT_ID = "81206403759-o2s2tkv3cl58c86njqh90crd8vnj6b82.apps.googleusercontent.com";
 const CALENDAR_ID = "localizedirect.com_jeoc6a4e3gnc1uptt72bajcni8@group.calendar.google.com";
 const members = [
@@ -60,6 +61,7 @@ async function main() {
   createMemberSelect();
   getRandomQuote();
 
+  document.getElementById("to-year").innerText = thisYear;
   const resultEl = document.getElementById("available-leaves");
   let dots = "";
   const loadingTimerId = setInterval(() => {
@@ -96,7 +98,7 @@ function createMemberSelect() {
 function generateYearOptions() {
   const yearSelectEl = document.getElementById("year-select");
   const startYear = 2019;
-  const currentYear = new Date().getFullYear();
+  const currentYear = thisYear;
   for (let y = startYear; y <= currentYear; y++) {
     const option = document.createElement("option");
     option.text = option.value = y;
@@ -224,7 +226,7 @@ async function getSpentLeaves() {
       }
     }
     renderTable(userEvents);
-    if (selectedYear === new Date().getFullYear()) {
+    if (selectedYear === thisYear) {
       leaveCountThisYear = leaveCount;
     }
     clearInterval(loadingTimerId);
