@@ -10,8 +10,8 @@ const members = [
   { email: "dng@localizedirect.com", names: ["Duong Nguyen", "Duong"] },
   { email: "dpn@localizedirect.com", names: ["Duong Phung"] },
   { email: "dp@localizedirect.com", names: ["Dung"] },
-  { email: "gn@localizedirect.com", names: ["Giang"] },
-  { email: "hh@localizedirect.com", names: ["Hieu H.", "Hieu Huynh", "Hieu H"] },
+  { email: "gn@localizedirect.com", names: ["Giang"], isAdmin: true },
+  { email: "hh@localizedirect.com", names: ["Hieu Huynh", "Hieu H.", "Hieu H"] },
   { email: "hm@localizedirect.com", names: ["Huong"] },
   { email: "kl@localizedirect.com", names: ["Khanh Le"] },
   { email: "kp@localizedirect.com", names: ["Khanh Pham", "Khanh", "Khanh P", "Khanh P."] },
@@ -19,7 +19,7 @@ const members = [
   { email: "ldv@localizedirect.com", names: ["Long"] },
   { email: "nn@localizedirect.com", names: ["Andy", "Nha"] },
   { email: "nnc@localizedirect.com", names: ["Jason", "Cuong"] },
-  { email: "pia@localizedirect.com", names: ["Pia", "Huyen"] },
+  { email: "pia@localizedirect.com", names: ["Pia", "Huyen"], isAdmin: true },
   { email: "pv@localizedirect.com", names: ["Phu"] },
   { email: "qh@localizedirect.com", names: ["Quang Huynh"] },
   { email: "qv@localizedirect.com", names: ["Quang Vo", "Quang"] },
@@ -28,7 +28,7 @@ const members = [
   { email: "tc@localizedirect.com", names: ["Steve", "Tri Truong", "Tri T."] },
   { email: "th@localizedirect.com", names: ["Tan"] },
   { email: "tp@localizedirect.com", names: ["Thanh Phan", "Thanh"] },
-  { email: "tin@localizedirect.com", names: ["Tin"] },
+  { email: "tin@localizedirect.com", names: ["Tin"], isAdmin: true },
   { email: "tn@localizedirect.com", names: ["Truong"] },
   { email: "tnn@localizedirect.com", names: ["Thy"] },
   { email: "vtl@localizedirect.com", names: ["Trong"] },
@@ -57,6 +57,7 @@ async function main() {
     return;
   }
   generateYearOptions();
+  createMemberSelect();
   getRandomQuote();
 
   const resultEl = document.getElementById("available-leaves");
@@ -73,6 +74,22 @@ async function main() {
   } catch (error) {
     clearInterval(loadingTimerId);
     console.log(error.message);
+  }
+}
+
+function createMemberSelect() {
+  const memberSelectEl = document.getElementById("member-select");
+  const isAdmin = getUser(currentUser.email).isAdmin;
+  if (!isAdmin) {
+    memberSelectEl.classList.add("hidden");
+    return;
+  }
+  for (const member of members) {
+    const option = document.createElement("option");
+    option.text = member.names[0];
+    option.value = member.email;
+    if (member.email === currentUser.email) option.selected = true;
+    memberSelectEl.appendChild(option);
   }
 }
 
@@ -106,10 +123,8 @@ async function getMe() {
   }
 }
 
-function getUserNames(email = currentUser.email) {
-  const foundMember = members.find((member) => member.email === email);
-  if (!foundMember) throw new Error("User not found");
-  return foundMember.names;
+function getUser(email) {
+  return members.find((member) => member.email === email);
 }
 
 function generateTimeText(date) {
@@ -164,6 +179,7 @@ function renderTable(events) {
 async function getSpentLeaves() {
   const params = JSON.parse(localStorage.getItem("oauth2-params"));
   const selectedYear = Number(document.getElementById("year-select").value);
+  const email = document.getElementById("member-select").value || currentUser.email;
   const resultEl = document.getElementById("spent-leaves");
   const errorEl = document.getElementById("error-message");
   let dots = "";
@@ -188,7 +204,7 @@ async function getSpentLeaves() {
     let leaveCount = 0;
     const events = data.items || [];
     const userEvents = [];
-    const userNames = getUserNames();
+    const userNames = getUser(email).names;
     for (const event of events) {
       const dayPart = /morning|afternoon/.test(event.summary) ? 0.5 : 1;
       const startDate = new Date(event.end.date).getTime();
