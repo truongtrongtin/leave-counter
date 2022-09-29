@@ -14,14 +14,14 @@
 
   <body>
     <h1>Localize Direct VN leave counter</h1>
-    <button id="get-spent-leaves-btn" class="hidden" onclick="main()">Count my leaves now!</button>
+    <button id="get-spent-leaves-btn" class="hidden" onclick="main();">Count my leaves now!</button>
     <div id="logged-in-section" class="hidden">
       <p id="welcome"></p>
       <img id="avatar" src="data:," alt="avatar" width="100" height="100" />
       <p>
         <span>Spent days in</span>
-        <select id="year-select" onchange="getSpentLeaves()"></select>
-        <select id="member-select" onchange="getSpentLeaves()"></select>
+        <select id="year-select" onchange="onYearChange();"></select>
+        <select id="member-select" class="hidden" onchange="onMemberChange();"></select>
         <span>:</span>
       </p>
       <b id="spent-leaves"></b>
@@ -29,12 +29,12 @@
         <summary>Details</summary>
         <table id="detail-table"></table>
       </details>
-      <p>Available days (by Dec 31, <span id="to-year"></span>):</p>
+      <p>Available days (by Dec 31, <span id="by-year"></span>):</p>
       <b id="available-leaves"></b>
       <p id="error-message"></p>
       <p id="quote-content"></p>
       <p id="quote-author"></p>
-      <button onclick="oauth2SignOut()">Sign out</button>
+      <button onclick="oauth2SignOut();">Sign out</button>
     </div>
     <script src="script.js"></script>
   </body>

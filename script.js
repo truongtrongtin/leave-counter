@@ -2,7 +2,10 @@
 const theme = window.matchMedia("(prefers-color-scheme: dark)").matches ? "dark" : "light";
 document.documentElement.setAttribute("data-theme", theme);
 
-let currentUser, leaveCountThisYear;
+let currentUser = null,
+  calendarEvents = [],
+  memberEvents = [],
+  leaveCount = 0;
 const thisYear = new Date().getFullYear();
 const CLIENT_ID = "81206403759-o2s2tkv3cl58c86njqh90crd8vnj6b82.apps.googleusercontent.com";
 const CALENDAR_ID = "localizedirect.com_jeoc6a4e3gnc1uptt72bajcni8@group.calendar.google.com";
@@ -57,35 +60,32 @@ async function main() {
     oauth2SignIn();
     return;
   }
-  generateYearOptions();
-  createMemberSelect();
-  getRandomQuote();
+  buildYearSelect();
+  buildMemberSelect();
+  getAndShowRandomQuote();
 
-  document.getElementById("to-year").innerText = thisYear;
-  const resultEl = document.getElementById("available-leaves");
+  const remainCountEl = document.getElementById("available-leaves");
   let dots = "";
   const loadingTimerId = setInterval(() => {
     dots += ".";
     if (dots.length === 11) dots = "";
-    resultEl.innerHTML = `${dots} calculating ${dots}`;
+    remainCountEl.innerHTML = `${dots} calculating ${dots}`;
   }, 100);
   try {
-    const [_, availableLeaves] = await Promise.all([getSpentLeaves(), getAvailableLeaves()]);
+    const [_, availableLeaves] = await Promise.all([onYearChange(), getAvailableLeaves()]);
     clearInterval(loadingTimerId);
-    resultEl.innerHTML = Number((availableLeaves - leaveCountThisYear).toFixed(1));
+    remainCountEl.innerHTML = availableLeaves - leaveCount;
   } catch (error) {
     clearInterval(loadingTimerId);
     console.log(error.message);
   }
 }
 
-function createMemberSelect() {
+function buildMemberSelect() {
+  const isAdmin = getMember(currentUser.email).isAdmin;
+  if (!isAdmin) return;
   const memberSelectEl = document.getElementById("member-select");
-  const isAdmin = getUser(currentUser.email).isAdmin;
-  if (!isAdmin) {
-    memberSelectEl.classList.add("hidden");
-    return;
-  }
+  memberSelectEl.classList.remove("hidden");
   for (const member of members) {
     const option = document.createElement("option");
     option.text = member.names[0];
@@ -95,14 +95,14 @@ function createMemberSelect() {
   }
 }
 
-function generateYearOptions() {
+function buildYearSelect() {
+  document.getElementById("by-year").innerText = thisYear;
   const yearSelectEl = document.getElementById("year-select");
   const startYear = 2019;
-  const currentYear = thisYear;
-  for (let y = startYear; y <= currentYear; y++) {
+  for (let year = startYear; year <= thisYear; year++) {
     const option = document.createElement("option");
-    option.text = option.value = y;
-    if (y === currentYear) option.selected = true;
+    option.text = option.value = year;
+    if (year === thisYear) option.selected = true;
     yearSelectEl.appendChild(option);
   }
 }
@@ -125,7 +125,7 @@ async function getMe() {
   }
 }
 
-function getUser(email) {
+function getMember(email) {
   return members.find((member) => member.email === email);
 }
 
@@ -135,13 +135,40 @@ function generateTimeText(date) {
   return `${day} (${weekday})`;
 }
 
-function renderTable(events) {
+function countAndShowSpentDays() {
+  const spentCountEl = document.getElementById("spent-leaves");
+  const memberEmail = document.getElementById("member-select").value || currentUser.email;
+  // reset
+  leaveCount = 0;
+  memberEvents = [];
+  const memberNames = getMember(memberEmail).names;
+  for (const event of calendarEvents) {
+    const dayPart = /morning|afternoon/.test(event.summary) ? 0.5 : 1;
+    const startDate = new Date(event.end.date).getTime();
+    const endDate = new Date(event.start.date).getTime();
+    const diffDays = Math.ceil((startDate - endDate) / (24 * 60 * 60 * 1000));
+    const count = diffDays * dayPart;
+
+    // Parse all members mentioned in event summary
+    const eventMembers = event.summary.split("(off")[0].split(",");
+    // Count leaves
+    for (const member of eventMembers) {
+      const memberName = member.trim().toLowerCase();
+      if (memberNames.some((name) => name.toLowerCase() === memberName)) {
+        memberEvents.push(event);
+        leaveCount += count;
+      }
+    }
+  }
+  spentCountEl.innerHTML = leaveCount;
+}
+
+function showSpentTable() {
   const table = document.getElementById("detail-table");
   // clear table
   table.replaceChildren();
-
   // table body
-  events.forEach((event) => {
+  for (const event of memberEvents) {
     const tr = table.insertRow();
     let dayPartText = "",
       dayPartCount = 0;
@@ -163,32 +190,32 @@ function renderTable(events) {
     const reason = event.description ? JSON.parse(event.description).reason : "";
 
     const columns = [generateTimeText(startDate), generateTimeText(endDate), dayPartText, count, reason];
-    columns.forEach((column) => {
+    for (const column of columns) {
       const td = tr.insertCell();
       td.innerText = column;
-    });
-  });
+    }
+  }
 
   // table header
   const thead = table.createTHead();
   const row = thead.insertRow(0);
-  ["Start", "End", "Type", "Count", "Description"].forEach((header, index) => {
-    cell = row.insertCell(index);
-    cell.outerHTML = `<th>${header}</th>`;
-  });
+  const headers = ["Start", "End", "Type", "Count", "Description"];
+  for (let i = 0; i < headers.length; i++) {
+    cell = row.insertCell(i);
+    cell.outerHTML = `<th>${headers[i]}</th>`;
+  }
 }
 
-async function getSpentLeaves() {
+async function getCalendarEvents() {
   const params = JSON.parse(localStorage.getItem("oauth2-params"));
   const selectedYear = Number(document.getElementById("year-select").value);
-  const email = document.getElementById("member-select").value || currentUser.email;
-  const resultEl = document.getElementById("spent-leaves");
+  const spentCountEl = document.getElementById("spent-leaves");
   const errorEl = document.getElementById("error-message");
   let dots = "";
   const loadingTimerId = setInterval(() => {
     dots += ".";
     if (dots.length === 11) dots = "";
-    resultEl.innerHTML = `${dots} calculating ${dots}`;
+    spentCountEl.innerHTML = `${dots} calculating ${dots}`;
   }, 100);
 
   try {
@@ -202,46 +229,31 @@ async function getSpentLeaves() {
     const response = await fetch(`${endpoint}?${query}`);
     const data = await response.json();
     if (!response.ok) throw new Error(data.error.message);
+    calendarEvents = data.items || [];
 
-    let leaveCount = 0;
-    const events = data.items || [];
-    const userEvents = [];
-    const userNames = getUser(email).names;
-    for (const event of events) {
-      const dayPart = /morning|afternoon/.test(event.summary) ? 0.5 : 1;
-      const startDate = new Date(event.end.date).getTime();
-      const endDate = new Date(event.start.date).getTime();
-      const diffDays = Math.ceil((startDate - endDate) / (24 * 60 * 60 * 1000));
-      const count = diffDays * dayPart;
-
-      // Parse all members mentioned in event summary
-      const eventMembers = event.summary.split("(off")[0].split(",");
-      // Count leaves
-      for (const member of eventMembers) {
-        const memberName = member.trim().toLowerCase();
-        if (userNames.some((name) => name.toLowerCase() === memberName)) {
-          userEvents.push(event);
-          leaveCount += count;
-        }
-      }
-    }
-    renderTable(userEvents);
-    if (selectedYear === thisYear) {
-      leaveCountThisYear = leaveCount;
-    }
     clearInterval(loadingTimerId);
     errorEl.innerHTML = "";
-    resultEl.innerHTML = leaveCount;
   } catch (error) {
     console.log(error.message);
     clearInterval(loadingTimerId);
     errorEl.innerHTML = error.message;
-    resultEl.innerHTML = "";
+    spentCountEl.innerHTML = "";
     errorEl.style.color = "red";
   }
 }
 
-async function getRandomQuote() {
+async function onYearChange() {
+  await getCalendarEvents();
+  countAndShowSpentDays();
+  showSpentTable();
+}
+
+function onMemberChange() {
+  countAndShowSpentDays();
+  showSpentTable();
+}
+
+async function getAndShowRandomQuote() {
   try {
     const response = await fetch("https://api.quotable.io/random");
     const quote = await response.json();
