@@ -150,11 +150,10 @@ function countAndShowSpentDays() {
     const count = diffDays * dayPart;
 
     // Parse all members mentioned in event summary
-    const eventMembers = event.summary.split("(off")[0].split(",");
+    const eventMemberNames = event.summary.split("(off")[0].split(",");
     // Count leaves
-    for (const member of eventMembers) {
-      const memberName = member.trim().toLowerCase();
-      if (memberNames.some((name) => name.toLowerCase() === memberName)) {
+    for (const eventMemberName of eventMemberNames) {
+      if (memberNames.some((name) => name.toLowerCase() === eventMemberName.trim().toLowerCase())) {
         memberEvents.push(event);
         leaveCount += count;
       }
@@ -225,6 +224,8 @@ async function getCalendarEvents() {
       timeMin: new Date(selectedYear, 0, 1).toISOString(),
       timeMax: new Date(selectedYear + 1, 0, 1).toISOString(),
       q: "off",
+      orderBy: "startTime",
+      singleEvents: true,
     });
     const response = await fetch(`${endpoint}?${query}`);
     const data = await response.json();
