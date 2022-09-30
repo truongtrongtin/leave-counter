@@ -5,7 +5,8 @@ document.documentElement.setAttribute("data-theme", theme);
 let currentUser = null,
   calendarEvents = [],
   memberEvents = [],
-  leaveCount = 0;
+  leaveCount = 0,
+  availableLeaves = [];
 const thisYear = new Date().getFullYear();
 const CLIENT_ID = "81206403759-o2s2tkv3cl58c86njqh90crd8vnj6b82.apps.googleusercontent.com";
 const CALENDAR_ID = "localizedirect.com_jeoc6a4e3gnc1uptt72bajcni8@group.calendar.google.com";
@@ -72,9 +73,9 @@ async function main() {
     remainCountEl.innerHTML = `${dots} calculating ${dots}`;
   }, 100);
   try {
-    const [_, availableLeaves] = await Promise.all([onYearChange(), getAvailableLeaves()]);
+    await Promise.all([onYearChange(), getAvailableLeaves()]);
     clearInterval(loadingTimerId);
-    remainCountEl.innerHTML = availableLeaves - leaveCount;
+    showAvailableDays();
   } catch (error) {
     clearInterval(loadingTimerId);
     console.log(error.message);
@@ -252,6 +253,7 @@ async function onYearChange() {
 function onMemberChange() {
   countAndShowSpentDays();
   showSpentTable();
+  showAvailableDays();
 }
 
 async function getAndShowRandomQuote() {
@@ -271,11 +273,17 @@ async function getAvailableLeaves() {
     const query = new URLSearchParams({ access_token: params["access_token"] });
     const endpoint = "https://available-leaves-yaxjnhmzuq-as.a.run.app";
     const response = await fetch(`${endpoint}?${query}`);
-    const json = await response.json();
-    return json.availableLeaves;
+    availableLeaves = await response.json();
   } catch (error) {
     throw error;
   }
+}
+
+function showAvailableDays() {
+  const memberEmail = document.getElementById("member-select").value || currentUser.email;
+  const count = availableLeaves.find((leave) => leave.email === memberEmail).value;
+  const remainCountEl = document.getElementById("available-leaves");
+  remainCountEl.innerHTML = count - leaveCount;
 }
 
 function oauth2SignIn() {

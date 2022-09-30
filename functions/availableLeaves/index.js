@@ -31,8 +31,8 @@ functions.http("availableLeaves", async (req, res) => {
   }
 
   const sheetValuesQuery = new URLSearchParams();
-  sheetValuesQuery.append("ranges", "1:1");
-  sheetValuesQuery.append("ranges", "19:19");
+  sheetValuesQuery.append("ranges", "B1:1");
+  sheetValuesQuery.append("ranges", "B19:19");
   const sheetValuesResponse = await fetch(`https://sheets.googleapis.com/v4/spreadsheets/${process.env.SPREADSHEET_ID}/values:batchGet?${sheetValuesQuery}`, {
     headers: { Authorization: `Bearer ${tokenObject.access_token}` },
   });
@@ -44,8 +44,12 @@ functions.http("availableLeaves", async (req, res) => {
 
   const memberCodes = sheetValues.valueRanges[0].values[0];
   const allAvailableLeaves = sheetValues.valueRanges[1].values[0];
-  const foundIndex = memberCodes.findIndex((code) => code === userInfo.email.split("@localizedirect.com")[0]);
-  const availableLeaves = Number(allAvailableLeaves[foundIndex]) || 0;
-
-  res.status(200).json({ email: userInfo.email, availableLeaves });
+  const result = [];
+  for (let i = 0; i < memberCodes.length; i++) {
+    result[i] = {
+      email: memberCodes[i] + "@localizedirect.com",
+      value: allAvailableLeaves[i] || 0,
+    };
+  }
+  res.status(200).json(result);
 });
