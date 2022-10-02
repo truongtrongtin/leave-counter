@@ -3,23 +3,23 @@ const theme = window.matchMedia("(prefers-color-scheme: dark)").matches ? "dark"
 document.documentElement.setAttribute("data-theme", theme);
 
 let currentUser = null,
-  calendarEvents = [],
-  memberEvents = [],
-  leaveCount = 0,
-  availableLeaves = [];
+  availableLeaves = [],
+  spentObject = {
+    // email: { year: { totalCount: 10, events: [{ start: "", end: "", type: "", count: 10, description: "" }] } }
+  };
 const thisYear = new Date().getFullYear();
 const CLIENT_ID = "81206403759-o2s2tkv3cl58c86njqh90crd8vnj6b82.apps.googleusercontent.com";
 const CALENDAR_ID = "localizedirect.com_jeoc6a4e3gnc1uptt72bajcni8@group.calendar.google.com";
 const members = [
   { email: "cm@localizedirect.com", names: ["Chau"] },
   { email: "dng@localizedirect.com", names: ["Duong Nguyen", "Duong"] },
-  { email: "dpn@localizedirect.com", names: ["Duong Phung"] },
   { email: "dp@localizedirect.com", names: ["Dung"] },
+  { email: "dpn@localizedirect.com", names: ["Duong Phung"] },
   { email: "gn@localizedirect.com", names: ["Giang"], isAdmin: true },
-  { email: "hh@localizedirect.com", names: ["Hieu Huynh", "Hieu H.", "Hieu H"] },
+  { email: "hh@localizedirect.com", names: ["Hieu Huynh"] },
   { email: "hm@localizedirect.com", names: ["Huong"] },
   { email: "kl@localizedirect.com", names: ["Khanh Le"] },
-  { email: "kp@localizedirect.com", names: ["Khanh Pham", "Khanh", "Khanh P", "Khanh P."] },
+  { email: "kp@localizedirect.com", names: ["Khanh Pham", "Khanh"] },
   { email: "ld@localizedirect.com", names: ["Lynh"] },
   { email: "ldv@localizedirect.com", names: ["Long"] },
   { email: "nn@localizedirect.com", names: ["Andy", "Nha"] },
@@ -30,10 +30,10 @@ const members = [
   { email: "qv@localizedirect.com", names: ["Quang Vo", "Quang"] },
   { email: "sla@localizedirect.com", names: ["Son"] },
   { email: "sn@localizedirect.com", names: ["Sang"] },
-  { email: "tc@localizedirect.com", names: ["Steve", "Tri Truong", "Tri T."] },
+  { email: "tc@localizedirect.com", names: ["Steve", "Tri Truong"] },
   { email: "th@localizedirect.com", names: ["Tan"] },
-  { email: "tp@localizedirect.com", names: ["Thanh Phan", "Thanh"] },
   { email: "tin@localizedirect.com", names: ["Tin"], isAdmin: true },
+  { email: "tp@localizedirect.com", names: ["Thanh Phan", "Thanh"] },
   { email: "tn@localizedirect.com", names: ["Truong"] },
   { email: "tnn@localizedirect.com", names: ["Thy"] },
   { email: "vtl@localizedirect.com", names: ["Trong"] },
@@ -70,7 +70,7 @@ async function main() {
   const loadingTimerId = setInterval(() => {
     dots += ".";
     if (dots.length === 11) dots = "";
-    remainCountEl.innerHTML = `${dots} calculating ${dots}`;
+    remainCountEl.innerHTML = `${dots} loading ${dots}`;
   }, 100);
   try {
     await Promise.all([onYearChange(), getAvailableLeaves()]);
@@ -83,7 +83,7 @@ async function main() {
 }
 
 function buildMemberSelect() {
-  const isAdmin = getMember(currentUser.email).isAdmin;
+  const isAdmin = getLocalMember(currentUser.email)?.isAdmin;
   if (!isAdmin) return;
   const memberSelectEl = document.getElementById("member-select");
   memberSelectEl.classList.remove("hidden");
@@ -99,6 +99,7 @@ function buildMemberSelect() {
 function buildYearSelect() {
   document.getElementById("by-year").innerText = thisYear;
   const yearSelectEl = document.getElementById("year-select");
+  yearSelectEl.classList.remove("hidden");
   const startYear = 2019;
   for (let year = startYear; year <= thisYear; year++) {
     const option = document.createElement("option");
@@ -126,8 +127,22 @@ async function getMe() {
   }
 }
 
-function getMember(email) {
+function getLocalMember(email) {
   return members.find((member) => member.email === email);
+}
+
+function getSelectedEmail() {
+  return document.getElementById("member-select").value || currentUser.email;
+}
+
+function getSelectedYear() {
+  return Number(document.getElementById("year-select").value) || thisYear;
+}
+
+function getSpentData(year, email) {
+  const selectedEmail = email || getSelectedEmail();
+  const selectedYear = year || getSelectedYear();
+  return spentObject?.[selectedYear]?.[selectedEmail] || { totalCount: 0, events: [] };
 }
 
 function generateTimeText(date) {
@@ -136,31 +151,9 @@ function generateTimeText(date) {
   return `${day} (${weekday})`;
 }
 
-function countAndShowSpentDays() {
+function showSpentCount() {
   const spentCountEl = document.getElementById("spent-leaves");
-  const memberEmail = document.getElementById("member-select").value || currentUser.email;
-  // reset
-  leaveCount = 0;
-  memberEvents = [];
-  const memberNames = getMember(memberEmail).names;
-  for (const event of calendarEvents) {
-    const dayPart = /morning|afternoon/.test(event.summary) ? 0.5 : 1;
-    const startDate = new Date(event.end.date).getTime();
-    const endDate = new Date(event.start.date).getTime();
-    const diffDays = Math.ceil((startDate - endDate) / (24 * 60 * 60 * 1000));
-    const count = diffDays * dayPart;
-
-    // Parse all members mentioned in event summary
-    const eventMemberNames = event.summary.split("(off")[0].split(",");
-    // Count leaves
-    for (const eventMemberName of eventMemberNames) {
-      if (memberNames.some((name) => name.toLowerCase() === eventMemberName.trim().toLowerCase())) {
-        memberEvents.push(event);
-        leaveCount += count;
-      }
-    }
-  }
-  spentCountEl.innerHTML = leaveCount;
+  spentCountEl.innerHTML = getSpentData().totalCount;
 }
 
 function showSpentTable() {
@@ -168,31 +161,12 @@ function showSpentTable() {
   // clear table
   table.replaceChildren();
   // table body
+  const memberEvents = getSpentData().events;
   for (const event of memberEvents) {
     const tr = table.insertRow();
-    let dayPartText = "",
-      dayPartCount = 0;
-    if (event.summary.includes("morning")) {
-      dayPartText = "Morning";
-      dayPartCount = 0.5;
-    } else if (event.summary.includes("afternoon")) {
-      dayPartText = "Afternoon";
-      dayPartCount = 0.5;
-    } else {
-      dayPartText = "All day";
-      dayPartCount = 1;
-    }
-    const startDate = new Date(event.start.date);
-    const endDate = new Date(event.end.date);
-    const diffDays = Math.ceil((endDate.getTime() - startDate.getTime()) / (24 * 60 * 60 * 1000));
-    const count = diffDays * dayPartCount;
-    endDate.setDate(endDate.getDate() - 1);
-    const reason = event.description ? JSON.parse(event.description).reason : "";
-
-    const columns = [generateTimeText(startDate), generateTimeText(endDate), dayPartText, count, reason];
-    for (const column of columns) {
+    for (const key in event) {
       const td = tr.insertCell();
-      td.innerText = column;
+      td.innerText = event[key];
     }
   }
 
@@ -207,15 +181,17 @@ function showSpentTable() {
 }
 
 async function getCalendarEvents() {
+  const selectedYear = getSelectedYear();
+  if (spentObject[selectedYear]) return;
   const params = JSON.parse(localStorage.getItem("oauth2-params"));
-  const selectedYear = Number(document.getElementById("year-select").value);
   const spentCountEl = document.getElementById("spent-leaves");
   const errorEl = document.getElementById("error-message");
+
   let dots = "";
   const loadingTimerId = setInterval(() => {
     dots += ".";
     if (dots.length === 11) dots = "";
-    spentCountEl.innerHTML = `${dots} calculating ${dots}`;
+    spentCountEl.innerHTML = `${dots} loading ${dots}`;
   }, 100);
 
   try {
@@ -231,7 +207,48 @@ async function getCalendarEvents() {
     const response = await fetch(`${endpoint}?${query}`);
     const data = await response.json();
     if (!response.ok) throw new Error(data.error.message);
-    calendarEvents = data.items || [];
+
+    for (const event of data.items) {
+      let dayPartText = "",
+        dayPartCount = 0;
+      if (event.summary.includes("morning")) {
+        dayPartText = "Morning";
+        dayPartCount = 0.5;
+      } else if (event.summary.includes("afternoon")) {
+        dayPartText = "Afternoon";
+        dayPartCount = 0.5;
+      } else {
+        dayPartText = "All day";
+        dayPartCount = 1;
+      }
+      const startDate = new Date(event.start.date);
+      const endDate = new Date(event.end.date);
+      const diffDays = Math.ceil((endDate.getTime() - startDate.getTime()) / (24 * 60 * 60 * 1000));
+      const count = diffDays * dayPartCount;
+      endDate.setDate(endDate.getDate() - 1);
+      const reason = event.description ? JSON.parse(event.description).reason : "";
+
+      const newEvent = {
+        start: generateTimeText(startDate),
+        end: generateTimeText(endDate),
+        type: dayPartText,
+        count,
+        description: reason,
+      };
+
+      const eventMemberNames = event.summary
+        .split("(off")[0]
+        .split(",")
+        .map((name) => name.trim());
+      for (const memberName of eventMemberNames) {
+        const foundMember = members.find((m) => m.names.includes(memberName));
+        const email = foundMember ? foundMember.email : memberName;
+        if (!spentObject[selectedYear]) spentObject[selectedYear] = {};
+        if (!spentObject[selectedYear][email]) spentObject[selectedYear][email] = { totalCount: 0, events: [] };
+        spentObject[selectedYear][email].totalCount += count;
+        spentObject[selectedYear][email].events.push(newEvent);
+      }
+    }
 
     clearInterval(loadingTimerId);
     errorEl.innerHTML = "";
@@ -246,12 +263,12 @@ async function getCalendarEvents() {
 
 async function onYearChange() {
   await getCalendarEvents();
-  countAndShowSpentDays();
+  showSpentCount();
   showSpentTable();
 }
 
 function onMemberChange() {
-  countAndShowSpentDays();
+  showSpentCount();
   showSpentTable();
   showAvailableDays();
 }
@@ -283,7 +300,7 @@ function showAvailableDays() {
   const memberEmail = document.getElementById("member-select").value || currentUser.email;
   const count = availableLeaves.find((leave) => leave.email === memberEmail).value;
   const remainCountEl = document.getElementById("available-leaves");
-  remainCountEl.innerHTML = count - leaveCount;
+  remainCountEl.innerHTML = count - getSpentData(thisYear).totalCount;
 }
 
 function oauth2SignIn() {
