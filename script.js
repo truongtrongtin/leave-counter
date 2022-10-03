@@ -24,6 +24,7 @@ const members = [
   { email: "ldv@localizedirect.com", names: ["Long"] },
   { email: "nn@localizedirect.com", names: ["Andy", "Nha"] },
   { email: "nnc@localizedirect.com", names: ["Jason", "Cuong"] },
+  { email: "np@localizedirect.com", names: ["Ngan Phan"] },
   { email: "pia@localizedirect.com", names: ["Pia", "Huyen"], isAdmin: true },
   { email: "pv@localizedirect.com", names: ["Phu"] },
   { email: "qh@localizedirect.com", names: ["Quang Huynh"] },
@@ -298,7 +299,7 @@ async function getAvailableLeaves() {
 
 function showAvailableDays() {
   const memberEmail = document.getElementById("member-select").value || currentUser.email;
-  const count = availableLeaves.find((leave) => leave.email === memberEmail).value;
+  const count = availableLeaves.find((leave) => leave.email === memberEmail)?.value || 0;
   const remainCountEl = document.getElementById("available-leaves");
   remainCountEl.innerHTML = count - getSpentData(thisYear).totalCount;
 }
