@@ -10,6 +10,7 @@ let currentUser = null,
 const thisYear = new Date().getFullYear();
 const CLIENT_ID = "81206403759-o2s2tkv3cl58c86njqh90crd8vnj6b82.apps.googleusercontent.com";
 const CALENDAR_ID = "localizedirect.com_jeoc6a4e3gnc1uptt72bajcni8@group.calendar.google.com";
+const AVAILABLE_LEAVES_URL = "https://available-leaves-yaxjnhmzuq-as.a.run.app";
 const members = [
   { email: "cm@localizedirect.com", names: ["Chau"] },
   { email: "dng@localizedirect.com", names: ["Duong Nguyen", "Duong"] },
@@ -57,11 +58,7 @@ if (localStorage.getItem("oauth2-params")) {
 
 async function main() {
   await getMe();
-  if (!currentUser) {
-    oauth2SignOut();
-    oauth2SignIn();
-    return;
-  }
+  if (!currentUser) return;
   buildYearSelect();
   buildMemberSelect();
   getAndShowRandomQuote();
@@ -73,14 +70,9 @@ async function main() {
     if (dots.length === 11) dots = "";
     remainCountEl.innerHTML = `${dots} loading ${dots}`;
   }, 100);
-  try {
-    await Promise.all([onYearChange(), getAvailableLeaves()]);
-    clearInterval(loadingTimerId);
-    showAvailableDays();
-  } catch (error) {
-    clearInterval(loadingTimerId);
-    console.log(error.message);
-  }
+  await Promise.all([onYearChange(), getAvailableLeaves()]);
+  clearInterval(loadingTimerId);
+  showAvailableDays();
 }
 
 function buildMemberSelect() {
@@ -100,7 +92,6 @@ function buildMemberSelect() {
 function buildYearSelect() {
   document.getElementById("by-year").innerText = thisYear;
   const yearSelectEl = document.getElementById("year-select");
-  yearSelectEl.classList.remove("hidden");
   const startYear = 2019;
   for (let year = startYear; year <= thisYear; year++) {
     const option = document.createElement("option");
@@ -110,13 +101,22 @@ function buildYearSelect() {
   }
 }
 
+function getAccessToken() {
+  return JSON.parse(localStorage.getItem("oauth2-params"))?.["access_token"] || "";
+}
+
 async function getMe() {
-  const params = JSON.parse(localStorage.getItem("oauth2-params"));
   try {
-    const query = new URLSearchParams({ access_token: params["access_token"] });
+    const accessToken = getAccessToken();
+    const query = new URLSearchParams({ access_token: accessToken });
     const endpoint = "https://www.googleapis.com/oauth2/v3/userinfo";
     const response = await fetch(`${endpoint}?${query}`);
     const userInfo = await response.json();
+    if (response.status === 401) {
+      oauth2SignOut();
+      oauth2SignIn();
+      return;
+    }
     if (!response.ok) throw new Error(userInfo.error_description);
     currentUser = userInfo;
     document.getElementById("get-spent-leaves-btn").classList.add("hidden");
@@ -124,7 +124,7 @@ async function getMe() {
     document.getElementById("welcome").innerHTML = `Welcome <b>${currentUser.given_name}</b>!`;
     document.getElementById("logged-in-section").classList.remove("hidden");
   } catch (error) {
-    console.log(error.message);
+    showError(error.message);
   }
 }
 
@@ -182,23 +182,23 @@ function showSpentTable() {
 }
 
 async function getCalendarEvents() {
-  const selectedYear = getSelectedYear();
-  if (spentObject[selectedYear]) return;
-  const params = JSON.parse(localStorage.getItem("oauth2-params"));
-  const spentCountEl = document.getElementById("spent-leaves");
-  const errorEl = document.getElementById("error-message");
-
-  let dots = "";
-  const loadingTimerId = setInterval(() => {
-    dots += ".";
-    if (dots.length === 11) dots = "";
-    spentCountEl.innerHTML = `${dots} loading ${dots}`;
-  }, 100);
-
+  let loadingTimerId;
   try {
+    const accessToken = getAccessToken();
+    const selectedYear = getSelectedYear();
+    if (spentObject[selectedYear]) return;
+    const spentCountEl = document.getElementById("spent-leaves");
+
+    let dots = "";
+    loadingTimerId = setInterval(() => {
+      dots += ".";
+      if (dots.length === 11) dots = "";
+      spentCountEl.innerHTML = `${dots} loading ${dots}`;
+    }, 100);
+
     const endpoint = `https://www.googleapis.com/calendar/v3/calendars/${CALENDAR_ID}/events`;
     const query = new URLSearchParams({
-      access_token: params["access_token"],
+      access_token: accessToken,
       timeMin: new Date(selectedYear, 0, 1).toISOString(),
       timeMax: new Date(selectedYear + 1, 0, 1).toISOString(),
       q: "off",
@@ -252,13 +252,9 @@ async function getCalendarEvents() {
     }
 
     clearInterval(loadingTimerId);
-    errorEl.innerHTML = "";
   } catch (error) {
-    console.log(error.message);
     clearInterval(loadingTimerId);
-    errorEl.innerHTML = error.message;
-    spentCountEl.innerHTML = "";
-    errorEl.style.color = "red";
+    showError(error.message);
   }
 }
 
@@ -281,16 +277,15 @@ async function getAndShowRandomQuote() {
     document.getElementById("quote-content").innerHTML = quote.content;
     document.getElementById("quote-author").innerHTML = quote.author;
   } catch (error) {
-    console.log(error.message);
+    showError(error.message);
   }
 }
 
 async function getAvailableLeaves() {
   try {
-    const params = JSON.parse(localStorage.getItem("oauth2-params"));
-    const query = new URLSearchParams({ access_token: params["access_token"] });
-    const endpoint = "https://available-leaves-yaxjnhmzuq-as.a.run.app";
-    const response = await fetch(`${endpoint}?${query}`);
+    const accessToken = getAccessToken();
+    const query = new URLSearchParams({ access_token: accessToken });
+    const response = await fetch(`${AVAILABLE_LEAVES_URL}?${query}`);
     availableLeaves = await response.json();
   } catch (error) {
     throw error;
@@ -325,4 +320,9 @@ function oauth2SignOut() {
   localStorage.removeItem("oauth2-params");
   document.getElementById("get-spent-leaves-btn").classList.remove("hidden");
   document.getElementById("logged-in-section").classList.add("hidden");
+}
+
+function showError(message) {
+  document.getElementById("dialog").showModal();
+  document.getElementById("error-message").innerHTML = message;
 }

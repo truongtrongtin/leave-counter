@@ -20,22 +20,27 @@
       <img id="avatar" src="data:," alt="avatar" width="100" height="100" />
       <p>
         <span>Spent days in</span>
-        <select id="year-select" class="hidden" onchange="onYearChange();"></select>
+        <select id="year-select" onchange="onYearChange();"></select>
         <select id="member-select" class="hidden" onchange="onMemberChange();"></select>
         <span>:</span>
       </p>
-      <b id="spent-leaves"></b>
+      <strong id="spent-leaves"></strong>
       <details open>
         <summary>Details</summary>
         <table id="detail-table"></table>
       </details>
       <p>Available days (by Dec 31, <span id="by-year"></span>):</p>
-      <b id="available-leaves"></b>
-      <p id="error-message"></p>
+      <strong id="available-leaves"></strong>
       <p id="quote-content"></p>
       <p id="quote-author"></p>
       <button onclick="oauth2SignOut();">Sign out</button>
     </div>
+    <dialog id="dialog">
+      <form method="dialog">
+        <p id="error-message"></p>
+        <button>Close</button>
+      </form>
+    </dialog>
     <script src="script.js"></script>
   </body>
 </html>

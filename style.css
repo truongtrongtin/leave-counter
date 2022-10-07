@@ -47,3 +47,11 @@ td {
   border: 1px solid var(--text-color);
   padding: 5px 10px;
 }
+
+#dialog {
+  max-width: 500px;
+}
+
+#error-message {
+  color: red;
+}
