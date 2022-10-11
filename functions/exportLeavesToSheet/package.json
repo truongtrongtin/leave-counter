@@ -3,14 +3,15 @@
   "type": "module",
   "scripts": {
     "dev": "npm-watch start",
-    "start": "env-cmd functions-framework --target=availableLeaves"
+    "start": "env-cmd functions-framework --target=exportLeavesToSheet"
   },
   "watch": {
     "start": "*.js"
   },
   "dependencies": {
     "@google-cloud/functions-framework": "3.1.2",
-    "node-fetch": "3.2.10"
+    "node-fetch": "3.2.10",
+    "xlsx": "https://cdn.sheetjs.com/xlsx-0.18.12/xlsx-0.18.12.tgz"
   },
   "devDependencies": {
     "env-cmd": "10.1.0",

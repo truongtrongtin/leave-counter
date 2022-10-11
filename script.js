@@ -11,6 +11,7 @@ const thisYear = new Date().getFullYear();
 const CLIENT_ID = "81206403759-o2s2tkv3cl58c86njqh90crd8vnj6b82.apps.googleusercontent.com";
 const CALENDAR_ID = "localizedirect.com_jeoc6a4e3gnc1uptt72bajcni8@group.calendar.google.com";
 const AVAILABLE_LEAVES_URL = "https://available-leaves-yaxjnhmzuq-as.a.run.app";
+const EXPORT_SHEET_URL = "https://export-leaves-to-sheet-yaxjnhmzuq-as.a.run.app";
 const members = [
   { email: "cm@localizedirect.com", names: ["Chau"] },
   { email: "dng@localizedirect.com", names: ["Duong Nguyen", "Duong"] },
@@ -297,6 +298,27 @@ function showAvailableDays() {
   const count = availableLeaves.find((leave) => leave.email === memberEmail)?.value || 0;
   const remainCountEl = document.getElementById("available-leaves");
   remainCountEl.innerHTML = count - getSpentData(thisYear).totalCount;
+}
+
+async function downloadSheet() {
+  const accessToken = getAccessToken();
+  const downloadBtn = document.getElementById("download");
+  downloadBtn.disabled = true;
+  downloadBtn.textContent = "Exporting...";
+  try {
+    const response = await fetch(`${EXPORT_SHEET_URL}?access_token=${accessToken}`);
+    const filename = response.headers.get("Content-Disposition").split('"')[1];
+    const fileBlob = await response.blob();
+    const url = URL.createObjectURL(fileBlob);
+    const anchor = document.createElement("a");
+    anchor.href = url;
+    anchor.download = filename;
+    anchor.click();
+  } catch (error) {
+    showError(error.message);
+  }
+  downloadBtn.disabled = false;
+  downloadBtn.textContent = "Export";
 }
 
 function oauth2SignIn() {
