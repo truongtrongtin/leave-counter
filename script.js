@@ -205,12 +205,18 @@ async function getCalendarEvents() {
       q: "off",
       orderBy: "startTime",
       singleEvents: true,
+      maxResults: 2500,
     });
-    const response = await fetch(`${endpoint}?${query}`);
-    const data = await response.json();
-    if (!response.ok) throw new Error(data.error.message);
+    let events = [];
+    do {
+      const response = await fetch(`${endpoint}?${query}`);
+      const data = await response.json();
+      if (!response.ok) throw new Error(data.error.message);
+      events = events.concat(data.items);
+      query.set("pageToken", data.nextPageToken || "");
+    } while (query.get("pageToken"));
 
-    for (const event of data.items) {
+    for (const event of events) {
       let dayPartText = "",
         dayPartCount = 0;
       if (event.summary.includes("morning")) {

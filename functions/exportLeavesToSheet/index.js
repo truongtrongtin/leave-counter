@@ -62,26 +62,24 @@ functions.http("exportLeavesToSheet", async (req, res) => {
   getGoogleUser(access_token);
 
   const endpoint = `https://www.googleapis.com/calendar/v3/calendars/${process.env.CALENDAR_ID}/events`;
-  let nextPageToken = "";
+  const query = new URLSearchParams({
+    access_token,
+    q: "off",
+    orderBy: "startTime",
+    singleEvents: true,
+    maxResults: 2500,
+  });
   let events = [];
   do {
-    const query = new URLSearchParams({
-      access_token,
-      q: "off",
-      orderBy: "startTime",
-      singleEvents: true,
-      maxResults: 2500,
-      pageToken: nextPageToken,
-    });
     const response = await fetch(`${endpoint}?${query}`);
     const data = await response.json();
     if (!response.ok) {
       res.status(response.status).json(data);
       return;
     }
-    nextPageToken = data.nextPageToken || "";
     events = events.concat(data.items);
-  } while (nextPageToken);
+    query.set("pageToken", data.nextPageToken || "");
+  } while (query.get("pageToken"));
 
   const rows = [];
   const width = { email: 0, name: 0, start: 0, end: 0, type: 0, count: 0, description: 0 };
