@@ -58,6 +58,12 @@ functions.http("exportLeavesToSheet", async (req, res) => {
   res.set("Access-Control-Allow-Origin", "*");
   res.set("Access-Control-Expose-Headers", ["Content-Disposition"]);
   const { access_token } = req.query;
+  if (!access_token) {
+    return res.status(400).json({
+      error: "required",
+      message: "Required parameter is missing",
+    });
+  }
 
   getGoogleUser(access_token);
 
@@ -74,8 +80,7 @@ functions.http("exportLeavesToSheet", async (req, res) => {
     const response = await fetch(`${endpoint}?${query}`);
     const data = await response.json();
     if (!response.ok) {
-      res.status(response.status).json(data);
-      return;
+      return res.status(response.status).json(data);
     }
     events = events.concat(data.items);
     query.set("pageToken", data.nextPageToken || "");

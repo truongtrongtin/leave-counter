@@ -5,13 +5,18 @@ functions.http("availableLeaves", async (req, res) => {
   res.set("Access-Control-Allow-Origin", "*");
 
   const { access_token } = req.query;
+  if (!access_token) {
+    return res.status(400).json({
+      error: "required",
+      message: "Required parameter is missing",
+    });
+  }
   const userInfoQuery = new URLSearchParams({ access_token });
   const userInfoEndpoint = "https://www.googleapis.com/oauth2/v3/userinfo";
   const userInfoResponse = await fetch(`${userInfoEndpoint}?${userInfoQuery}`);
   const userInfo = await userInfoResponse.json();
   if (!userInfoResponse.ok) {
-    res.status(userInfoResponse.status).json(userInfo);
-    return;
+    return res.status(userInfoResponse.status).json(userInfo);
   }
   console.log(userInfo.name);
 
@@ -26,8 +31,7 @@ functions.http("availableLeaves", async (req, res) => {
   });
   const tokenObject = await accessTokenResponse.json();
   if (!accessTokenResponse.ok) {
-    res.status(accessTokenResponse.status).json(tokenObject);
-    return;
+    return res.status(accessTokenResponse.status).json(tokenObject);
   }
 
   const sheetValuesQuery = new URLSearchParams();
@@ -38,8 +42,7 @@ functions.http("availableLeaves", async (req, res) => {
   });
   const sheetValues = await sheetValuesResponse.json();
   if (!sheetValuesResponse.ok) {
-    res.status(sheetValuesResponse.status).json(tokenObject);
-    return;
+    return res.status(sheetValuesResponse.status).json(tokenObject);
   }
 
   const memberCodes = sheetValues.valueRanges[0].values[0];
