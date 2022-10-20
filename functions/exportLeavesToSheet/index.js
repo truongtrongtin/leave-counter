@@ -106,7 +106,7 @@ functions.http("exportLeavesToSheet", async (req, res) => {
     const diffDays = Math.ceil((endDate.getTime() - startDate.getTime()) / (24 * 60 * 60 * 1000));
     const count = diffDays * dayPartCount;
     endDate.setDate(endDate.getDate() - 1);
-    const reason = event.description ? JSON.parse(event.description).reason : "";
+    const reason = event?.extendedProperties?.private?.reason || "";
 
     const eventMemberNames = event.summary
       .split("(off")[0]
