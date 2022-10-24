@@ -41,6 +41,8 @@ const members = [
   { email: "tnn@localizedirect.com", names: ["Thy"] },
   { email: "vtl@localizedirect.com", names: ["Trong"] },
 ];
+const MONTH_NAMES = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
+const initialMonthlyCounts = Array(12).fill(0);
 
 const hash = location.hash.substring(1);
 const params = Object.fromEntries(new URLSearchParams(hash));
@@ -60,8 +62,10 @@ if (localStorage.getItem("oauth2-params")) {
 async function main() {
   await getMe();
   if (!currentUser) return;
+  buildModeSelect();
   buildYearSelect();
   buildMemberSelect();
+  buildModeSelect();
   getAndShowRandomQuote();
 
   const remainCountEl = document.getElementById("available-leaves");
@@ -73,7 +77,15 @@ async function main() {
   }, 100);
   await Promise.all([onYearChange(), getAvailableLeaves()]);
   clearInterval(loadingTimerId);
+  buildMultipleTable();
   showAvailableDays();
+}
+
+function buildModeSelect() {
+  const modeSelectEl = document.getElementById("mode-select");
+  const isAdmin = getLocalMember(currentUser.email)?.isAdmin;
+  if (!isAdmin) return;
+  modeSelectEl.classList.remove("hidden");
 }
 
 function buildMemberSelect() {
@@ -158,8 +170,8 @@ function showSpentCount() {
   spentCountEl.innerHTML = getSpentData().totalCount;
 }
 
-function showSpentTable() {
-  const table = document.getElementById("detail-table");
+function buildSingleSpentTable() {
+  const table = document.getElementById("single-table");
   // clear table
   table.replaceChildren();
   // table body
@@ -176,6 +188,35 @@ function showSpentTable() {
   const thead = table.createTHead();
   const row = thead.insertRow(0);
   const headers = ["Start", "End", "Type", "Count", "Description"];
+  for (let i = 0; i < headers.length; i++) {
+    cell = row.insertCell(i);
+    cell.outerHTML = `<th>${headers[i]}</th>`;
+  }
+}
+
+function buildMultipleTable() {
+  const table = document.getElementById("multiple-table");
+  // clear table
+  table.replaceChildren();
+  // table body
+  for (const member of members) {
+    const spentData = getSpentData(null, member.email);
+    const monthlyCounts = spentData.monthlyCounts || initialMonthlyCounts;
+    const tr = table.insertRow();
+    tr.insertCell().innerText = member.names[0];
+    for (const count of monthlyCounts) {
+      const td = tr.insertCell();
+      td.innerText = count || "";
+    }
+    tr.insertCell().innerText = spentData.totalCount;
+    const availableLeave = availableLeaves.find((leave) => leave.email === member.email)?.value || 0;
+    tr.insertCell().innerText = availableLeave - getSpentData(thisYear, member.email).totalCount;
+  }
+
+  // table header
+  const thead = table.createTHead();
+  const row = thead.insertRow(0);
+  const headers = ["Name", ...MONTH_NAMES, "Spent", "Avail"];
   for (let i = 0; i < headers.length; i++) {
     cell = row.insertCell(i);
     cell.outerHTML = `<th>${headers[i]}</th>`;
@@ -231,6 +272,12 @@ async function getCalendarEvents() {
       }
       const startDate = new Date(event.start.date);
       const endDate = new Date(event.end.date);
+      const monthlyCountObject = {};
+      for (let d = new Date(startDate); d < endDate; d.setDate(d.getDate() + 1)) {
+        const month = d.getMonth();
+        if (!monthlyCountObject[month]) monthlyCountObject[month] = 0;
+        monthlyCountObject[month] += dayPartCount;
+      }
       const diffDays = Math.ceil((endDate.getTime() - startDate.getTime()) / (24 * 60 * 60 * 1000));
       const count = diffDays * dayPartCount;
       endDate.setDate(endDate.getDate() - 1);
@@ -252,9 +299,12 @@ async function getCalendarEvents() {
         const foundMember = members.find((m) => m.names.includes(memberName));
         const email = foundMember ? foundMember.email : memberName;
         if (!spentObject[selectedYear]) spentObject[selectedYear] = {};
-        if (!spentObject[selectedYear][email]) spentObject[selectedYear][email] = { totalCount: 0, events: [] };
+        if (!spentObject[selectedYear][email]) spentObject[selectedYear][email] = { totalCount: 0, events: [], monthlyCounts: [...initialMonthlyCounts] };
         spentObject[selectedYear][email].totalCount += count;
         spentObject[selectedYear][email].events.push(newEvent);
+        for (const month in monthlyCountObject) {
+          spentObject[selectedYear][email].monthlyCounts[month] += monthlyCountObject[month];
+        }
       }
     }
 
@@ -265,15 +315,40 @@ async function getCalendarEvents() {
   }
 }
 
+function onModeChange() {
+  const mode = document.getElementById("mode-select").value;
+  const memberSelect = document.getElementById("member-select");
+  const availableSection = document.getElementById("available-section");
+  const singleSpentSection = document.getElementById("single-spent-section");
+  const multipleSpentSection = document.getElementById("multiple-spent-section");
+  switch (mode) {
+    case "single":
+      memberSelect.disabled = false;
+      availableSection.classList.remove("hidden");
+      singleSpentSection.classList.remove("hidden");
+      multipleSpentSection.classList.add("hidden");
+      break;
+    case "multiple":
+      memberSelect.disabled = true;
+      availableSection.classList.add("hidden");
+      singleSpentSection.classList.add("hidden");
+      multipleSpentSection.classList.remove("hidden");
+      break;
+    default:
+      break;
+  }
+}
+
 async function onYearChange() {
   await getCalendarEvents();
   showSpentCount();
-  showSpentTable();
+  buildSingleSpentTable();
+  buildMultipleTable();
 }
 
 function onMemberChange() {
   showSpentCount();
-  showSpentTable();
+  buildSingleSpentTable();
   showAvailableDays();
 }
 
@@ -301,9 +376,9 @@ async function getAvailableLeaves() {
 
 function showAvailableDays() {
   const memberEmail = document.getElementById("member-select").value || currentUser.email;
-  const count = availableLeaves.find((leave) => leave.email === memberEmail)?.value || 0;
+  const availableLeave = availableLeaves.find((leave) => leave.email === memberEmail)?.value || 0;
   const remainCountEl = document.getElementById("available-leaves");
-  remainCountEl.innerHTML = count - getSpentData(thisYear).totalCount;
+  remainCountEl.innerHTML = availableLeave - getSpentData(thisYear).totalCount;
 }
 
 async function downloadSheet() {
