@@ -3,9 +3,15 @@ const theme = window.matchMedia("(prefers-color-scheme: dark)").matches ? "dark"
 document.documentElement.setAttribute("data-theme", theme);
 
 let currentUser = null,
-  availableLeaves = [],
+  availableObject = {},
   spentObject = {
-    // email: { year: { totalCount: 10, events: [{ start: "", end: "", type: "", count: 10, description: "" }] } }
+    // email: {
+    //   year: {
+    //     totalCount: 10,
+    //     monthlyCounts: [],
+    //     events: [{ start: "", end: "", type: "", count: 10, description: "" }],
+    //   },
+    // },
   };
 const thisYear = new Date().getFullYear();
 const CLIENT_ID = "81206403759-o2s2tkv3cl58c86njqh90crd8vnj6b82.apps.googleusercontent.com";
@@ -75,7 +81,7 @@ async function main() {
     if (dots.length === 11) dots = "";
     remainCountEl.innerHTML = `${dots} loading ${dots}`;
   }, 100);
-  await Promise.all([onYearChange(), getAvailableLeaves()]);
+  await Promise.all([onYearChange(), getAvailableData()]);
   clearInterval(loadingTimerId);
   buildMultipleTable();
   showAvailableDays();
@@ -159,6 +165,11 @@ function getSpentData(year, email) {
   return spentObject?.[selectedYear]?.[selectedEmail] || { totalCount: 0, events: [] };
 }
 
+function getAvailableValue(email) {
+  const selectedEmail = email || getSelectedEmail();
+  return availableObject[selectedEmail] || 0;
+}
+
 function generateTimeText(date) {
   const day = new Date(date).toLocaleString("en-US", { day: "numeric", month: "short" });
   const weekday = new Date(date).toLocaleString("en-US", { weekday: "short" });
@@ -168,6 +179,11 @@ function generateTimeText(date) {
 function showSpentCount() {
   const spentCountEl = document.getElementById("spent-leaves");
   spentCountEl.innerHTML = getSpentData().totalCount;
+}
+
+function showAvailableDays() {
+  const remainCountEl = document.getElementById("available-leaves");
+  remainCountEl.innerHTML = getAvailableValue() - getSpentData(thisYear).totalCount;
 }
 
 function buildSingleSpentTable() {
@@ -183,7 +199,6 @@ function buildSingleSpentTable() {
       td.innerText = event[key];
     }
   }
-
   // table header
   const thead = table.createTHead();
   const row = thead.insertRow(0);
@@ -209,10 +224,8 @@ function buildMultipleTable() {
       td.innerText = count || "";
     }
     tr.insertCell().innerText = spentData.totalCount;
-    const availableLeave = availableLeaves.find((leave) => leave.email === member.email)?.value || 0;
-    tr.insertCell().innerText = availableLeave - getSpentData(thisYear, member.email).totalCount;
+    tr.insertCell().innerText = getAvailableValue(member.email) - getSpentData(thisYear, member.email).totalCount;
   }
-
   // table header
   const thead = table.createTHead();
   const row = thead.insertRow(0);
@@ -245,8 +258,8 @@ async function getCalendarEvents() {
       timeMax: new Date(selectedYear + 1, 0, 1).toISOString(),
       q: "off",
       orderBy: "startTime",
-      singleEvents: true,
-      maxResults: 2500,
+      singleEvents: "true",
+      maxResults: "2500",
     });
     let events = [];
     do {
@@ -273,21 +286,22 @@ async function getCalendarEvents() {
       const startDate = new Date(event.start.date);
       const endDate = new Date(event.end.date);
       const monthlyCountObject = {};
+      let eventDayCount = 0;
+      // date range loop
       for (let d = new Date(startDate); d < endDate; d.setDate(d.getDate() + 1)) {
         const month = d.getMonth();
         if (!monthlyCountObject[month]) monthlyCountObject[month] = 0;
         monthlyCountObject[month] += dayPartCount;
+        eventDayCount += dayPartCount;
       }
-      const diffDays = Math.ceil((endDate.getTime() - startDate.getTime()) / (24 * 60 * 60 * 1000));
-      const count = diffDays * dayPartCount;
+
       endDate.setDate(endDate.getDate() - 1);
       const reason = event?.extendedProperties?.private?.reason || "";
-
       const newEvent = {
         start: generateTimeText(startDate),
         end: generateTimeText(endDate),
         type: dayPartText,
-        count,
+        count: eventDayCount,
         description: reason,
       };
 
@@ -300,7 +314,7 @@ async function getCalendarEvents() {
         const email = foundMember ? foundMember.email : memberName;
         if (!spentObject[selectedYear]) spentObject[selectedYear] = {};
         if (!spentObject[selectedYear][email]) spentObject[selectedYear][email] = { totalCount: 0, events: [], monthlyCounts: [...initialMonthlyCounts] };
-        spentObject[selectedYear][email].totalCount += count;
+        spentObject[selectedYear][email].totalCount += eventDayCount;
         spentObject[selectedYear][email].events.push(newEvent);
         for (const month in monthlyCountObject) {
           spentObject[selectedYear][email].monthlyCounts[month] += monthlyCountObject[month];
@@ -363,22 +377,15 @@ async function getAndShowRandomQuote() {
   }
 }
 
-async function getAvailableLeaves() {
+async function getAvailableData() {
   try {
     const accessToken = getAccessToken();
     const query = new URLSearchParams({ access_token: accessToken });
     const response = await fetch(`${AVAILABLE_LEAVES_URL}?${query}`);
-    availableLeaves = await response.json();
+    availableObject = await response.json();
   } catch (error) {
     throw error;
   }
-}
-
-function showAvailableDays() {
-  const memberEmail = document.getElementById("member-select").value || currentUser.email;
-  const availableLeave = availableLeaves.find((leave) => leave.email === memberEmail)?.value || 0;
-  const remainCountEl = document.getElementById("available-leaves");
-  remainCountEl.innerHTML = availableLeave - getSpentData(thisYear).totalCount;
 }
 
 async function downloadSheet() {

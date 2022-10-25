@@ -47,12 +47,10 @@ functions.http("availableLeaves", async (req, res) => {
 
   const memberCodes = sheetValues.valueRanges[0].values[0];
   const allAvailableLeaves = sheetValues.valueRanges[1].values[0];
-  const result = [];
+  const result = {};
   for (let i = 0; i < memberCodes.length; i++) {
-    result[i] = {
-      email: memberCodes[i] + "@localizedirect.com",
-      value: allAvailableLeaves[i] || 0,
-    };
+    const email = memberCodes[i] + "@localizedirect.com";
+    result[email] = Number(allAvailableLeaves[i]) || 0;
   }
   res.status(200).json(result);
 });
