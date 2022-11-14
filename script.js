@@ -46,6 +46,7 @@ const members = [
   { email: "kl@localizedirect.com", names: ["Khanh Le"] },
   { email: "tp@localizedirect.com", names: ["Thanh Phan", "Thanh"] },
   { email: "np@localizedirect.com", names: ["Ngan Phan"] },
+  { email: "qt@localizedirect.com", names: ["Quoc Truong", "Quoc"] },
 ];
 const MONTH_NAMES = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
 const initialMonthlyCounts = Array(12).fill(0);
