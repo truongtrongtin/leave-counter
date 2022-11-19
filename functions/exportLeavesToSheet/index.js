@@ -1,38 +1,38 @@
 import * as functions from "@google-cloud/functions-framework";
 import * as fs from "fs";
-import fetch from "node-fetch";
 import * as XLSX from "xlsx/xlsx.mjs";
 
 XLSX.set_fs(fs);
 
 const members = [
-  { email: "cm@localizedirect.com", names: ["Chau"] },
-  { email: "dng@localizedirect.com", names: ["Duong Nguyen", "Duong"] },
-  { email: "dp@localizedirect.com", names: ["Dung"] },
-  { email: "dpn@localizedirect.com", names: ["Duong Phung"] },
-  { email: "gn@localizedirect.com", names: ["Giang"], isAdmin: true },
-  { email: "hh@localizedirect.com", names: ["Hieu Huynh"] },
-  { email: "hm@localizedirect.com", names: ["Huong"] },
-  { email: "kl@localizedirect.com", names: ["Khanh Le"] },
-  { email: "kp@localizedirect.com", names: ["Khanh Pham", "Khanh"] },
   { email: "ld@localizedirect.com", names: ["Lynh"] },
-  { email: "ldv@localizedirect.com", names: ["Long"] },
-  { email: "nn@localizedirect.com", names: ["Andy", "Nha"] },
-  { email: "nnc@localizedirect.com", names: ["Jason", "Cuong"] },
-  { email: "np@localizedirect.com", names: ["Ngan Phan"] },
-  { email: "pia@localizedirect.com", names: ["Pia", "Huyen"], isAdmin: true },
-  { email: "pv@localizedirect.com", names: ["Phu"] },
-  { email: "qh@localizedirect.com", names: ["Quang Huynh"] },
-  { email: "qv@localizedirect.com", names: ["Quang Vo", "Quang"] },
-  { email: "sla@localizedirect.com", names: ["Son"] },
-  { email: "sn@localizedirect.com", names: ["Sang"] },
-  { email: "tc@localizedirect.com", names: ["Steve", "Tri Truong"] },
+  { email: "tn@localizedirect.com", names: ["Truong"] },
+  { email: "gn@localizedirect.com", names: ["Giang"], isAdmin: true },
+  { email: "dng@localizedirect.com", names: ["Duong Nguyen", "Duong"] },
+  { email: "vtl@localizedirect.com", names: ["Trong"] },
+  { email: "kp@localizedirect.com", names: ["Khanh Pham", "Khanh"] },
   { email: "th@localizedirect.com", names: ["Tan"] },
   { email: "tin@localizedirect.com", names: ["Tin"], isAdmin: true },
-  { email: "tp@localizedirect.com", names: ["Thanh Phan", "Thanh"] },
-  { email: "tn@localizedirect.com", names: ["Truong"] },
+  { email: "hh@localizedirect.com", names: ["Hieu Huynh"] },
+  { email: "sn@localizedirect.com", names: ["Sang"] },
+  { email: "dp@localizedirect.com", names: ["Dung"] },
+  { email: "qv@localizedirect.com", names: ["Quang Vo", "Quang"] },
+  { email: "pv@localizedirect.com", names: ["Phu"] },
+  { email: "pia@localizedirect.com", names: ["Pia", "Huyen"], isAdmin: true },
+  { email: "ldv@localizedirect.com", names: ["Long"] },
+  { email: "hm@localizedirect.com", names: ["Huong"] },
+  { email: "tc@localizedirect.com", names: ["Steve", "Tri Truong"] },
   { email: "tnn@localizedirect.com", names: ["Thy"] },
-  { email: "vtl@localizedirect.com", names: ["Trong"] },
+  { email: "nn@localizedirect.com", names: ["Andy", "Nha"] },
+  { email: "nnc@localizedirect.com", names: ["Jason", "Cuong"] },
+  { email: "cm@localizedirect.com", names: ["Chau"] },
+  { email: "sla@localizedirect.com", names: ["Son"] },
+  { email: "qh@localizedirect.com", names: ["Quang Huynh"] },
+  { email: "dpn@localizedirect.com", names: ["Duong Phung"] },
+  { email: "kl@localizedirect.com", names: ["Khanh Le"] },
+  { email: "tp@localizedirect.com", names: ["Thanh Phan", "Thanh"] },
+  { email: "np@localizedirect.com", names: ["Ngan Phan"] },
+  { email: "qt@localizedirect.com", names: ["Quoc Truong", "Quoc"] },
 ];
 
 function generateTimeText(date) {

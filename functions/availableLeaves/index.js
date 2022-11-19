@@ -1,5 +1,4 @@
 import * as functions from "@google-cloud/functions-framework";
-import fetch from "node-fetch";
 
 functions.http("availableLeaves", async (req, res) => {
   res.set("Access-Control-Allow-Origin", "*");

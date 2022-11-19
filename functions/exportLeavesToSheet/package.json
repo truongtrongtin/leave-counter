@@ -10,8 +10,7 @@
   },
   "dependencies": {
     "@google-cloud/functions-framework": "3.1.2",
-    "node-fetch": "3.2.10",
-    "xlsx": "https://cdn.sheetjs.com/xlsx-0.18.12/xlsx-0.18.12.tgz"
+    "xlsx": "https://cdn.sheetjs.com/xlsx-0.19.1/xlsx-0.19.1.tgz"
   },
   "devDependencies": {
     "env-cmd": "10.1.0",
