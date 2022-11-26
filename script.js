@@ -369,13 +369,15 @@ function onMemberChange() {
 }
 
 async function getAndShowRandomQuote() {
+  const quoteContent = document.getElementById("quote-content");
+  const quoteAuthor = document.getElementById("quote-author");
   try {
     const response = await fetch("https://api.quotable.io/random");
     const quote = await response.json();
-    document.getElementById("quote-content").innerHTML = quote.content;
-    document.getElementById("quote-author").innerHTML = quote.author;
+    quoteContent.innerHTML = quote.content;
+    quoteAuthor.innerHTML = quote.author;
   } catch (error) {
-    showError(error.message);
+    quoteContent.innerHTML = error.message;
   }
 }
 
