@@ -15,7 +15,7 @@ let currentUser = null,
   };
 const thisYear = new Date().getFullYear();
 const CLIENT_ID = "81206403759-o2s2tkv3cl58c86njqh90crd8vnj6b82.apps.googleusercontent.com";
-const CALENDAR_ID = "localizedirect.com_jeoc6a4e3gnc1uptt72bajcni8@group.calendar.google.com";
+const CALENDAR_EVENTS_URL = "https://calendar-events-yaxjnhmzuq-as.a.run.app";
 const AVAILABLE_LEAVES_URL = "https://available-leaves-yaxjnhmzuq-as.a.run.app";
 const EXPORT_SHEET_URL = "https://export-leaves-to-sheet-yaxjnhmzuq-as.a.run.app";
 const members = [
@@ -253,7 +253,6 @@ async function getCalendarEvents() {
       spentCountEl.innerHTML = `${dots} loading ${dots}`;
     }, 100);
 
-    const endpoint = `https://www.googleapis.com/calendar/v3/calendars/${CALENDAR_ID}/events`;
     const query = new URLSearchParams({
       access_token: accessToken,
       timeMin: new Date(selectedYear, 0, 1).toISOString(),
@@ -263,14 +262,9 @@ async function getCalendarEvents() {
       singleEvents: "true",
       maxResults: "2500",
     });
-    let events = [];
-    do {
-      const response = await fetch(`${endpoint}?${query}`);
-      const data = await response.json();
-      if (!response.ok) throw new Error(data.error.message);
-      events = events.concat(data.items);
-      query.set("pageToken", data.nextPageToken || "");
-    } while (query.get("pageToken"));
+    const response = await fetch(`${CALENDAR_EVENTS_URL}?${query}`);
+    const events = await response.json();
+    if (!response.ok) throw events;
 
     for (const event of events) {
       let dayPartText = "",
@@ -393,12 +387,13 @@ async function getAvailableData() {
 }
 
 async function downloadSheet() {
-  const accessToken = getAccessToken();
   const downloadBtn = document.getElementById("download");
   downloadBtn.disabled = true;
   downloadBtn.textContent = "Exporting...";
   try {
-    const response = await fetch(`${EXPORT_SHEET_URL}?access_token=${accessToken}`);
+    const accessToken = getAccessToken();
+    const query = new URLSearchParams({ access_token: accessToken });
+    const response = await fetch(`${EXPORT_SHEET_URL}?${query}`);
     const filename = response.headers.get("Content-Disposition").split('"')[1];
     const fileBlob = await response.blob();
     const url = URL.createObjectURL(fileBlob);
@@ -421,7 +416,7 @@ function oauth2SignIn() {
   const query = new URLSearchParams({
     client_id: CLIENT_ID,
     redirect_uri: location.href.replace(/\/$/, ""),
-    scope: "profile email https://www.googleapis.com/auth/calendar.events.readonly",
+    scope: "profile email",
     state: csrfToken,
     response_type: "token",
     hd: "localizedirect.com",
