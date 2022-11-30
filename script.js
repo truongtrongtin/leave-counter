@@ -5,18 +5,18 @@ document.documentElement.setAttribute("data-theme", theme);
 let currentUser = null,
   availableObject = {},
   spentObject = {
-    // email: {
-    //   year: {
+    // [email]: {
+    //   [year]: {
     //     totalCount: 10,
     //     monthlyCounts: [],
-    //     events: [{ start: "", end: "", type: "", count: 10, description: "" }],
+    //     events: [{ start: "", end: "", type: "", count: 0, description: "" }],
     //   },
     // },
   };
 const thisYear = new Date().getFullYear();
 const CLIENT_ID = "81206403759-o2s2tkv3cl58c86njqh90crd8vnj6b82.apps.googleusercontent.com";
-const CALENDAR_EVENTS_URL = "https://calendar-events-yaxjnhmzuq-as.a.run.app";
-const AVAILABLE_LEAVES_URL = "https://available-leaves-yaxjnhmzuq-as.a.run.app";
+const CALENDAR_EVENTS_URL = "https://asia-southeast1-my-project-1540367072726.cloudfunctions.net/calendar-events";
+const AVAILABLE_LEAVES_URL = "https://asia-southeast1-my-project-1540367072726.cloudfunctions.net/available-leaves";
 const EXPORT_SHEET_URL = "https://export-leaves-to-sheet-yaxjnhmzuq-as.a.run.app";
 const members = [
   { email: "ld@localizedirect.com", names: ["Lynh"] },
