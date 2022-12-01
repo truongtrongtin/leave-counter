@@ -1,6 +1,9 @@
-// Detect system theme
-const theme = window.matchMedia("(prefers-color-scheme: dark)").matches ? "dark" : "light";
-document.documentElement.setAttribute("data-theme", theme);
+const themeKey = "theme-preference";
+const THEME = { system: "system", dark: "dark", light: "light" };
+const darkScheme = window.matchMedia("(prefers-color-scheme: dark)");
+buildThemeSelect();
+changeTheme();
+darkScheme.onchange = changeTheme;
 
 let currentUser = null,
   availableObject = {},
@@ -73,7 +76,6 @@ async function main() {
   buildModeSelect();
   buildYearSelect();
   buildMemberSelect();
-  buildModeSelect();
   getAndShowRandomQuote();
 
   const remainCountEl = document.getElementById("available-leaves");
@@ -83,10 +85,33 @@ async function main() {
     if (dots.length === 11) dots = "";
     remainCountEl.innerHTML = `${dots} loading ${dots}`;
   }, 100);
-  await Promise.all([onYearChange(), getAvailableData()]);
+  await Promise.all([changeYear(), getAvailableData()]);
   clearInterval(loadingTimerId);
   buildMultipleTable();
   showAvailableDays();
+}
+
+function buildThemeSelect() {
+  const currentTheme = localStorage.getItem(themeKey) || THEME.system;
+  const themeSelect = document.getElementById("theme-select");
+  for (const theme in THEME) {
+    const option = document.createElement("option");
+    option.text = option.value = theme;
+    if (theme === currentTheme) option.selected = true;
+    themeSelect.appendChild(option);
+  }
+}
+
+function changeTheme() {
+  const theme = document.getElementById("theme-select").value;
+  if (theme === THEME.system) {
+    const systemTheme = darkScheme.matches ? THEME.dark : THEME.light;
+    document.documentElement.setAttribute("data-theme", systemTheme);
+    localStorage.removeItem(themeKey);
+  } else {
+    document.documentElement.setAttribute("data-theme", theme);
+    localStorage.setItem(themeKey, theme);
+  }
 }
 
 function buildModeSelect() {
@@ -325,7 +350,7 @@ async function getCalendarEvents() {
   }
 }
 
-function onModeChange() {
+function changeMode() {
   const mode = document.getElementById("mode-select").value;
   const memberSelect = document.getElementById("member-select");
   const availableSection = document.getElementById("available-section");
@@ -349,14 +374,14 @@ function onModeChange() {
   }
 }
 
-async function onYearChange() {
+async function changeYear() {
   await getCalendarEvents();
   showSpentCount();
   buildSingleSpentTable();
   buildMultipleTable();
 }
 
-function onMemberChange() {
+function changeMember() {
   showSpentCount();
   buildSingleSpentTable();
   showAvailableDays();

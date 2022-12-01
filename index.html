@@ -13,18 +13,20 @@
   </head>
 
   <body>
+    <span>Theme:</span>
+    <select id="theme-select" onchange="changeTheme()"></select>
     <h1>Localize Direct VN leave counter</h1>
-    <button id="get-spent-leaves-btn" class="hidden" onclick="main();">Count my leaves now!</button>
+    <button id="get-spent-leaves-btn" class="hidden" onclick="main()">Count my leaves now!</button>
     <div id="logged-in-section" class="hidden">
       <p id="welcome"></p>
       <img id="avatar" src="data:," alt="avatar" width="100" height="100" />
       <p></p>
-      <select id="mode-select" class="hidden" onchange="onModeChange();">
+      <select id="mode-select" class="hidden" onchange="changeMode()">
         <option value="single">Single member</option>
         <option value="multiple">Multiple member</option>
       </select>
-      <select id="year-select" onchange="onYearChange();"></select>
-      <select id="member-select" class="hidden" onchange="onMemberChange();"></select>
+      <select id="year-select" onchange="changeYear()"></select>
+      <select id="member-select" class="hidden" onchange="changeMember()"></select>
       <button id="download" class="hidden" onclick="downloadSheet()">Export</button>
       <section id="single-spent-section">
         <details open>
@@ -46,7 +48,7 @@
       </section>
       <p id="quote-content"></p>
       <p id="quote-author"></p>
-      <button onclick="oauth2SignOut();">Sign out</button>
+      <button onclick="oauth2SignOut()">Sign out</button>
     </div>
     <dialog id="dialog">
       <form method="dialog">
