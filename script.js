@@ -148,7 +148,9 @@ function buildYearSelect() {
 }
 
 function getAccessToken() {
-  return JSON.parse(localStorage.getItem("oauth2-params"))?.["access_token"] || "";
+  const tokenString = localStorage.getItem("oauth2-params");
+  if (!tokenString) return "";
+  return JSON.parse(tokenString).access_token || "";
 }
 
 async function getMe() {
@@ -289,7 +291,7 @@ async function getCalendarEvents() {
     });
     const response = await fetch(`${CALENDAR_EVENTS_URL}?${query}`);
     const events = await response.json();
-    if (!response.ok) throw events;
+    if (!response.ok) throw new Error(events.error_description);
 
     for (const event of events) {
       let dayPartText = "",
