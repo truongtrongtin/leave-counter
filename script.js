@@ -73,9 +73,12 @@ if (localStorage.getItem("oauth2-params")) {
 async function main() {
   await getMe();
   if (!currentUser) return;
-  buildModeSelect();
-  buildYearSelect();
-  buildMemberSelect();
+  const isAdmin = getLocalMember(currentUser.email)?.isAdmin;
+  if (isAdmin) {
+    showModeSelect();
+    buildAndShowMemberSelect();
+  }
+  buildAndShowYearSelect();
   getAndShowRandomQuote();
 
   const remainCountEl = document.getElementById("available-leaves");
@@ -114,18 +117,12 @@ function changeTheme() {
   }
 }
 
-function buildModeSelect() {
-  const modeSelectEl = document.getElementById("mode-select");
-  const isAdmin = getLocalMember(currentUser.email)?.isAdmin;
-  if (!isAdmin) return;
-  modeSelectEl.classList.remove("hidden");
+function showModeSelect() {
+  document.getElementById("mode-select").classList.remove("hidden");
 }
 
-function buildMemberSelect() {
-  const isAdmin = getLocalMember(currentUser.email)?.isAdmin;
-  if (!isAdmin) return;
+function buildAndShowMemberSelect() {
   const memberSelectEl = document.getElementById("member-select");
-  memberSelectEl.classList.remove("hidden");
   for (const member of members) {
     const option = document.createElement("option");
     option.text = member.names[0];
@@ -133,9 +130,10 @@ function buildMemberSelect() {
     if (member.email === currentUser.email) option.selected = true;
     memberSelectEl.appendChild(option);
   }
+  memberSelectEl.classList.remove("hidden");
 }
 
-function buildYearSelect() {
+function buildAndShowYearSelect() {
   document.getElementById("by-year").innerText = thisYear;
   const yearSelectEl = document.getElementById("year-select");
   const startYear = 2019;
@@ -145,6 +143,7 @@ function buildYearSelect() {
     if (year === thisYear) option.selected = true;
     yearSelectEl.appendChild(option);
   }
+  yearSelectEl.classList.remove("hidden");
 }
 
 function getAccessToken() {
@@ -170,7 +169,7 @@ async function getMe() {
     document.getElementById("get-spent-leaves-btn").classList.add("hidden");
     document.getElementById("avatar").setAttribute("src", currentUser.picture);
     document.getElementById("welcome").innerHTML = `Welcome <b>${currentUser.given_name}</b>!`;
-    document.getElementById("logged-in-section").classList.remove("hidden");
+    document.getElementById("signed-in-section").classList.remove("hidden");
   } catch (error) {
     showError(error.message);
   }
@@ -355,21 +354,18 @@ async function getCalendarEvents() {
 function changeMode() {
   const mode = document.getElementById("mode-select").value;
   const memberSelect = document.getElementById("member-select");
-  const availableSection = document.getElementById("available-section");
-  const singleSpentSection = document.getElementById("single-spent-section");
-  const multipleSpentSection = document.getElementById("multiple-spent-section");
+  const singleSection = document.getElementById("single-section");
+  const multipleSection = document.getElementById("multiple-section");
   switch (mode) {
     case "single":
       memberSelect.disabled = false;
-      availableSection.classList.remove("hidden");
-      singleSpentSection.classList.remove("hidden");
-      multipleSpentSection.classList.add("hidden");
+      singleSection.classList.remove("hidden");
+      multipleSection.classList.add("hidden");
       break;
     case "multiple":
       memberSelect.disabled = true;
-      availableSection.classList.add("hidden");
-      singleSpentSection.classList.add("hidden");
-      multipleSpentSection.classList.remove("hidden");
+      singleSection.classList.add("hidden");
+      multipleSection.classList.remove("hidden");
       break;
     default:
       break;
@@ -455,7 +451,7 @@ function oauth2SignOut() {
   currentUser = null;
   localStorage.removeItem("oauth2-params");
   document.getElementById("get-spent-leaves-btn").classList.remove("hidden");
-  document.getElementById("logged-in-section").classList.add("hidden");
+  document.getElementById("signed-in-section").classList.add("hidden");
 }
 
 function showError(message) {

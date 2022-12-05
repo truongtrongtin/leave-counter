@@ -17,7 +17,7 @@
     <select id="theme-select" onchange="changeTheme()"></select>
     <h1>Localize Direct VN leave counter</h1>
     <button id="get-spent-leaves-btn" class="hidden" onclick="main()">Count my leaves now!</button>
-    <div id="logged-in-section" class="hidden">
+    <div id="signed-in-section" class="hidden">
       <p id="welcome"></p>
       <img id="avatar" src="data:," alt="avatar" width="100" height="100" />
       <p></p>
@@ -25,22 +25,20 @@
         <option value="single">Single member</option>
         <option value="multiple">Multiple member</option>
       </select>
-      <select id="year-select" onchange="changeYear()"></select>
+      <select id="year-select" class="hidden" onchange="changeYear()"></select>
       <select id="member-select" class="hidden" onchange="changeMember()"></select>
       <button id="download" class="hidden" onclick="downloadSheet()">Export</button>
-      <section id="single-spent-section">
+      <section id="single-section">
         <details open>
           <summary>Details</summary>
           <table id="single-table"></table>
         </details>
         <p>Spent days:</p>
         <strong id="spent-leaves"></strong>
-      </section>
-      <section id="available-section">
         <p>Available days (by Dec 31, <span id="by-year"></span>):</p>
         <strong id="available-leaves"></strong>
       </section>
-      <section class="hidden" id="multiple-spent-section">
+      <section class="hidden" id="multiple-section">
         <details open>
           <summary>Details</summary>
           <table id="multiple-table"></table>
