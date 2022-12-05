@@ -19,15 +19,18 @@
     <button id="get-spent-leaves-btn" class="hidden" onclick="main()">Count my leaves now!</button>
     <div id="signed-in-section" class="hidden">
       <p id="welcome"></p>
-      <img id="avatar" src="data:," alt="avatar" width="100" height="100" />
-      <p></p>
-      <select id="mode-select" class="hidden" onchange="changeMode()">
-        <option value="single">Single member</option>
-        <option value="multiple">Multiple member</option>
-      </select>
-      <select id="year-select" class="hidden" onchange="changeYear()"></select>
-      <select id="member-select" class="hidden" onchange="changeMember()"></select>
-      <button id="download" class="hidden" onclick="downloadSheet()">Export</button>
+      <p>
+        <img id="avatar" src="data:," alt="avatar" width="100" height="100" />
+      </p>
+      <p id="mode-select" class="hidden">
+        <label><input type="radio" name="mode" value="single" checked onchange="changeMode()" />Single</label>
+        <label><input type="radio" name="mode" value="multiple" onchange="changeMode()" />Multiple</label>
+      </p>
+      <p>
+        <select id="year-select" class="hidden" onchange="changeYear()"></select>
+        <select id="member-select" class="hidden" onchange="changeMember()"></select>
+        <button id="download" class="hidden" onclick="downloadSheet()">Export</button>
+      </p>
       <section id="single-section">
         <details open>
           <summary>Details</summary>
@@ -38,7 +41,7 @@
         <p>Available days (by Dec 31, <span id="by-year"></span>):</p>
         <strong id="available-leaves"></strong>
       </section>
-      <section class="hidden" id="multiple-section">
+      <section id="multiple-section" class="hidden">
         <details open>
           <summary>Details</summary>
           <table id="multiple-table"></table>

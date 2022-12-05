@@ -352,7 +352,7 @@ async function getCalendarEvents() {
 }
 
 function changeMode() {
-  const mode = document.getElementById("mode-select").value;
+  const mode = document.querySelector("input[name='mode']:checked").value;
   const memberSelect = document.getElementById("member-select");
   const singleSection = document.getElementById("single-section");
   const multipleSection = document.getElementById("multiple-section");
