@@ -16,7 +16,8 @@ let currentUser = null,
     //   },
     // },
   };
-const thisYear = new Date().getFullYear();
+const today = new Date();
+const thisYear = today.getFullYear();
 const CLIENT_ID = "81206403759-o2s2tkv3cl58c86njqh90crd8vnj6b82.apps.googleusercontent.com";
 const CALENDAR_EVENTS_URL = "https://asia-southeast1-my-project-1540367072726.cloudfunctions.net/calendar-events";
 const AVAILABLE_LEAVES_URL = "https://asia-southeast1-my-project-1540367072726.cloudfunctions.net/available-leaves";
@@ -139,7 +140,9 @@ function buildAndShowYearSelect() {
   document.getElementById("by-year").innerText = thisYear;
   const yearSelectEl = document.getElementById("year-select");
   const startYear = 2019;
-  for (let year = startYear; year <= thisYear; year++) {
+  for (let year = startYear; year <= thisYear + 1; year++) {
+    // only show next year option on this year December
+    if (year === thisYear + 1 && today.getMonth() !== 11) break;
     const option = document.createElement("option");
     option.text = option.value = year;
     if (year === thisYear) option.selected = true;
