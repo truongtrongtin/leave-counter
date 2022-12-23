@@ -6,7 +6,7 @@ changeTheme();
 darkScheme.onchange = changeTheme;
 
 let currentUser = null,
-  availableObject = {},
+  members = [],
   spentObject = {
     // [email]: {
     //   [year]: {
@@ -20,41 +20,8 @@ const today = new Date();
 const thisYear = today.getFullYear();
 const CLIENT_ID = "81206403759-o2s2tkv3cl58c86njqh90crd8vnj6b82.apps.googleusercontent.com";
 const CALENDAR_EVENTS_URL = "https://asia-southeast1-my-project-1540367072726.cloudfunctions.net/calendar-events";
-const AVAILABLE_LEAVES_URL = "https://asia-southeast1-my-project-1540367072726.cloudfunctions.net/available-leaves";
+const MEMBERS_LIST_URL = "https://asia-southeast1-my-project-1540367072726.cloudfunctions.net/member-list";
 const EXPORT_SHEET_URL = "https://export-leaves-to-sheet-yaxjnhmzuq-as.a.run.app";
-const members = [
-  { email: "ld@localizedirect.com", names: ["Lynh"] },
-  { email: "tn@localizedirect.com", names: ["Truong"] },
-  { email: "gn@localizedirect.com", names: ["Giang"], isAdmin: true },
-  { email: "dng@localizedirect.com", names: ["Duong Nguyen"] },
-  { email: "vtl@localizedirect.com", names: ["Trong"] },
-  { email: "kp@localizedirect.com", names: ["Khanh Pham"] },
-  { email: "th@localizedirect.com", names: ["Tan"] },
-  { email: "tin@localizedirect.com", names: ["Tin"], isAdmin: true },
-  { email: "hh@localizedirect.com", names: ["Hieu Huynh"] },
-  { email: "sn@localizedirect.com", names: ["Sang"] },
-  { email: "dp@localizedirect.com", names: ["Dung"] },
-  { email: "qv@localizedirect.com", names: ["Quang Vo"] },
-  { email: "pv@localizedirect.com", names: ["Phu"] },
-  { email: "pia@localizedirect.com", names: ["Pia"], isAdmin: true },
-  { email: "ldv@localizedirect.com", names: ["Long"] },
-  { email: "hm@localizedirect.com", names: ["Huong"] },
-  { email: "tc@localizedirect.com", names: ["Steve", "Tri Truong"] },
-  { email: "tnn@localizedirect.com", names: ["Thy"] },
-  { email: "nn@localizedirect.com", names: ["Andy", "Nha"] },
-  { email: "nnc@localizedirect.com", names: ["Jason"] },
-  { email: "cm@localizedirect.com", names: ["Chau Nguyen"] },
-  { email: "sla@localizedirect.com", names: ["Son Le", "Son"] },
-  { email: "qh@localizedirect.com", names: ["Quang Huynh"] },
-  { email: "dpn@localizedirect.com", names: ["Duong Phung"] },
-  { email: "kl@localizedirect.com", names: ["Khanh Le"] },
-  { email: "tp@localizedirect.com", names: ["Thanh Phan", "Thanh"] },
-  { email: "np@localizedirect.com", names: ["Ngan Phan", "Ngan"] },
-  { email: "qt@localizedirect.com", names: ["Quoc Truong", "Quoc"] },
-  { email: "cdm@localizedirect.com", names: ["Chau Dang", "Chau"] },
-  { email: "mn@localizedirect.com", names: ["Minh Nguyen", "Minh"] },
-  { email: "cnp@localizedirect.com", names: ["Cuong Nguyen"] },
-];
 const MONTH_NAMES = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
 const initialMonthlyCounts = Array(12).fill(0);
 
@@ -76,11 +43,6 @@ if (localStorage.getItem("oauth2-params")) {
 async function main() {
   await getMe();
   if (!currentUser) return;
-  const isAdmin = getLocalMember(currentUser.email)?.isAdmin;
-  if (isAdmin) {
-    showModeSelect();
-    buildAndShowMemberSelect();
-  }
   buildAndShowYearSelect();
   getAndShowRandomQuote();
 
@@ -91,8 +53,13 @@ async function main() {
     if (dots.length === 11) dots = "";
     remainCountEl.innerHTML = `${dots} loading ${dots}`;
   }, 100);
-  await Promise.all([getCalendarEvents(), getAvailableData()]);
+  await Promise.all([getCalendarEvents(), getMembers()]);
   clearInterval(loadingTimerId);
+  const isAdmin = getMemberByEmail(currentUser.email)?.["Admin"];
+  if (isAdmin) {
+    showModeSelect();
+    buildAndShowMemberSelect();
+  }
   showSpentCount();
   showAvailableDays();
   buildSingleSpentTable();
@@ -130,9 +97,9 @@ function buildAndShowMemberSelect() {
   const memberSelectEl = document.getElementById("member-select");
   for (const member of members) {
     const option = document.createElement("option");
-    option.text = member.names[0];
-    option.value = member.email;
-    if (member.email === currentUser.email) option.selected = true;
+    option.text = member["Name"];
+    option.value = member["Email"];
+    if (member["Email"] === currentUser.email) option.selected = true;
     memberSelectEl.appendChild(option);
   }
   memberSelectEl.classList.remove("hidden");
@@ -182,8 +149,8 @@ async function getMe() {
   }
 }
 
-function getLocalMember(email) {
-  return members.find((member) => member.email === email);
+function getMemberByEmail(email) {
+  return members.find((member) => member["Email"] === email);
 }
 
 function getSelectedEmail() {
@@ -202,7 +169,8 @@ function getSpentData(year, email) {
 
 function getAvailableValue(email) {
   const selectedEmail = email || getSelectedEmail();
-  return availableObject[selectedEmail] || 0;
+  const member = members.find((member) => member["Email"] === selectedEmail);
+  return member["Current year leave day balance"] || 0;
 }
 
 function generateTimeText(date) {
@@ -250,16 +218,16 @@ function buildMultipleTable() {
   table.replaceChildren();
   // table body
   for (const member of members) {
-    const spentData = getSpentData(null, member.email);
+    const spentData = getSpentData(null, member["Email"]);
     const monthlyCounts = spentData.monthlyCounts || initialMonthlyCounts;
     const tr = table.insertRow();
-    tr.insertCell().innerText = member.names[0];
+    tr.insertCell().innerText = member["Name"];
     for (const count of monthlyCounts) {
       const td = tr.insertCell();
       td.innerText = count || "";
     }
     tr.insertCell().innerText = spentData.totalCount;
-    tr.insertCell().innerText = getAvailableValue(member.email) - getSpentData(thisYear, member.email).totalCount;
+    tr.insertCell().innerText = getAvailableValue(member["Email"]) - getSpentData(thisYear, member["Email"]).totalCount;
   }
   // table header
   const thead = table.createTHead();
@@ -339,8 +307,8 @@ async function getCalendarEvents() {
         .split(",")
         .map((name) => name.trim());
       for (const memberName of eventMemberNames) {
-        const foundMember = members.find((m) => m.names.includes(memberName));
-        const email = foundMember ? foundMember.email : memberName;
+        const foundMember = members.find((member) => member["Name"] === memberName);
+        const email = foundMember ? foundMember["Email"] : memberName;
         if (!spentObject[selectedYear]) spentObject[selectedYear] = {};
         if (!spentObject[selectedYear][email]) spentObject[selectedYear][email] = { totalCount: 0, events: [], monthlyCounts: [...initialMonthlyCounts] };
         spentObject[selectedYear][email].totalCount += eventDayCount;
@@ -405,12 +373,12 @@ async function getAndShowRandomQuote() {
   }
 }
 
-async function getAvailableData() {
+async function getMembers() {
   try {
     const accessToken = getAccessToken();
     const query = new URLSearchParams({ access_token: accessToken });
-    const response = await fetch(`${AVAILABLE_LEAVES_URL}?${query}`);
-    availableObject = await response.json();
+    const response = await fetch(`${MEMBERS_LIST_URL}?${query}`);
+    members = await response.json();
   } catch (error) {
     throw error;
   }

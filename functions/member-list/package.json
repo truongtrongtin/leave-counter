@@ -3,7 +3,7 @@
   "type": "module",
   "scripts": {
     "dev": "npm-watch start",
-    "start": "env-cmd functions-framework --target=availableLeaves"
+    "start": "env-cmd functions-framework --target=member-list"
   },
   "watch": {
     "start": "*.js"
