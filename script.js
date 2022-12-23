@@ -42,17 +42,17 @@ const members = [
   { email: "tc@localizedirect.com", names: ["Steve", "Tri Truong"] },
   { email: "tnn@localizedirect.com", names: ["Thy"] },
   { email: "nn@localizedirect.com", names: ["Andy", "Nha"] },
-  { email: "nnc@localizedirect.com", names: ["Jason", "Cuong"] },
+  { email: "nnc@localizedirect.com", names: ["Jason"] },
   { email: "cm@localizedirect.com", names: ["Chau Nguyen"] },
-  { email: "sla@localizedirect.com", names: ["Son Le"] },
+  { email: "sla@localizedirect.com", names: ["Son Le", "Son"] },
   { email: "qh@localizedirect.com", names: ["Quang Huynh"] },
   { email: "dpn@localizedirect.com", names: ["Duong Phung"] },
   { email: "kl@localizedirect.com", names: ["Khanh Le"] },
   { email: "tp@localizedirect.com", names: ["Thanh Phan", "Thanh"] },
-  { email: "np@localizedirect.com", names: ["Ngan Phan"] },
+  { email: "np@localizedirect.com", names: ["Ngan Phan", "Ngan"] },
   { email: "qt@localizedirect.com", names: ["Quoc Truong", "Quoc"] },
-  { email: "cdm@localizedirect.com", names: ["Chau Dang"] },
-  { email: "mn@localizedirect.com", names: ["Minh Nguyen"] },
+  { email: "cdm@localizedirect.com", names: ["Chau Dang", "Chau"] },
+  { email: "mn@localizedirect.com", names: ["Minh Nguyen", "Minh"] },
   { email: "cnp@localizedirect.com", names: ["Cuong Nguyen"] },
 ];
 const MONTH_NAMES = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
@@ -91,10 +91,12 @@ async function main() {
     if (dots.length === 11) dots = "";
     remainCountEl.innerHTML = `${dots} loading ${dots}`;
   }, 100);
-  await Promise.all([changeYear(), getAvailableData()]);
+  await Promise.all([getCalendarEvents(), getAvailableData()]);
   clearInterval(loadingTimerId);
-  buildMultipleTable();
+  showSpentCount();
   showAvailableDays();
+  buildSingleSpentTable();
+  buildMultipleTable();
 }
 
 function buildThemeSelect() {
