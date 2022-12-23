@@ -73,8 +73,8 @@ async function getSheetValues() {
       await getSheetAccessToken();
     }
     const sheetValuesQuery = new URLSearchParams();
-    sheetValuesQuery.append("ranges", "B1:1");
-    sheetValuesQuery.append("ranges", "B19:19");
+    sheetValuesQuery.append("ranges", "Sheet1!B1:1");
+    sheetValuesQuery.append("ranges", "Sheet1!B19:19");
     const sheetValuesResponse = await fetch(`https://sheets.googleapis.com/v4/spreadsheets/${process.env.SPREADSHEET_ID}/values:batchGet?${sheetValuesQuery}`, {
       headers: { Authorization: `Bearer ${sheetAccessToken}` },
     });

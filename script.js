@@ -21,7 +21,7 @@ const thisYear = today.getFullYear();
 const CLIENT_ID = "81206403759-o2s2tkv3cl58c86njqh90crd8vnj6b82.apps.googleusercontent.com";
 const CALENDAR_EVENTS_URL = "https://asia-southeast1-my-project-1540367072726.cloudfunctions.net/calendar-events";
 const AVAILABLE_LEAVES_URL = "https://asia-southeast1-my-project-1540367072726.cloudfunctions.net/available-leaves";
-const EXPORT_SHEET_URL = "https://export-leaves-to-sheet-yaxjnhmzuq-as.a.run.app";
+const EXPORT_SHEET_URL = "https://asia-southeast1-my-project-1540367072726.cloudfunctions.net/exportSheet";
 const members = [
   { email: "ld@localizedirect.com", names: ["Lynh"] },
   { email: "tn@localizedirect.com", names: ["Truong"] },
@@ -39,20 +39,20 @@ const members = [
   { email: "pia@localizedirect.com", names: ["Pia"], isAdmin: true },
   { email: "ldv@localizedirect.com", names: ["Long"] },
   { email: "hm@localizedirect.com", names: ["Huong"] },
-  { email: "tc@localizedirect.com", names: ["Steve", "Tri Truong"] },
+  { email: "tc@localizedirect.com", names: ["Steve"] },
   { email: "tnn@localizedirect.com", names: ["Thy"] },
   { email: "nn@localizedirect.com", names: ["Andy", "Nha"] },
-  { email: "nnc@localizedirect.com", names: ["Jason", "Cuong"] },
+  { email: "nnc@localizedirect.com", names: ["Jason"] },
   { email: "cm@localizedirect.com", names: ["Chau Nguyen"] },
-  { email: "sla@localizedirect.com", names: ["Son Le"] },
+  { email: "sla@localizedirect.com", names: ["Son", "Son Le"] },
   { email: "qh@localizedirect.com", names: ["Quang Huynh"] },
   { email: "dpn@localizedirect.com", names: ["Duong Phung"] },
   { email: "kl@localizedirect.com", names: ["Khanh Le"] },
-  { email: "tp@localizedirect.com", names: ["Thanh Phan", "Thanh"] },
-  { email: "np@localizedirect.com", names: ["Ngan Phan"] },
-  { email: "qt@localizedirect.com", names: ["Quoc Truong", "Quoc"] },
+  { email: "tp@localizedirect.com", names: ["Thanh", "Thanh Phan"] },
+  { email: "np@localizedirect.com", names: ["Ngan", "Ngan Phan"] },
+  { email: "qt@localizedirect.com", names: ["Quoc", "Quoc Truong"] },
   { email: "cdm@localizedirect.com", names: ["Chau Dang"] },
-  { email: "mn@localizedirect.com", names: ["Minh Nguyen"] },
+  { email: "mn@localizedirect.com", names: ["Minh", "Minh Nguyen"] },
   { email: "cnp@localizedirect.com", names: ["Cuong Nguyen"] },
 ];
 const MONTH_NAMES = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
@@ -80,6 +80,7 @@ async function main() {
   if (isAdmin) {
     showModeSelect();
     buildAndShowMemberSelect();
+    // showDownloadButton();
   }
   buildAndShowYearSelect();
   getAndShowRandomQuote();
@@ -91,10 +92,12 @@ async function main() {
     if (dots.length === 11) dots = "";
     remainCountEl.innerHTML = `${dots} loading ${dots}`;
   }, 100);
-  await Promise.all([changeYear(), getAvailableData()]);
+  await Promise.all([getCalendarEvents(), getAvailableData()]);
   clearInterval(loadingTimerId);
-  buildMultipleTable();
+  showSpentCount();
   showAvailableDays();
+  buildSingleSpentTable();
+  buildMultipleTable();
 }
 
 function buildThemeSelect() {
@@ -122,6 +125,10 @@ function changeTheme() {
 
 function showModeSelect() {
   document.getElementById("mode-select").classList.remove("hidden");
+}
+
+function showDownloadButton() {
+  document.getElementById("download-btn").classList.remove("hidden");
 }
 
 function buildAndShowMemberSelect() {
@@ -195,7 +202,7 @@ function getSelectedYear() {
 function getSpentData(year, email) {
   const selectedEmail = email || getSelectedEmail();
   const selectedYear = year || getSelectedYear();
-  return spentObject?.[selectedYear]?.[selectedEmail] || { totalCount: 0, events: [] };
+  return spentObject?.[selectedYear]?.[selectedEmail] || { totalCount: 0, events: [], monthlyCounts: [...initialMonthlyCounts] };
 }
 
 function getAvailableValue(email) {
@@ -228,17 +235,15 @@ function buildSingleSpentTable() {
   for (const event of memberEvents) {
     const tr = table.insertRow();
     for (const key in event) {
-      const td = tr.insertCell();
-      td.innerText = event[key];
+      tr.insertCell().innerText = event[key];
     }
   }
   // table header
   const thead = table.createTHead();
   const row = thead.insertRow(0);
   const headers = ["Start", "End", "Type", "Count", "Description"];
-  for (let i = 0; i < headers.length; i++) {
-    cell = row.insertCell(i);
-    cell.outerHTML = `<th>${headers[i]}</th>`;
+  for (const header of headers) {
+    row.insertCell().outerHTML = `<th>${header}</th>`;
   }
 }
 
@@ -249,12 +254,10 @@ function buildMultipleTable() {
   // table body
   for (const member of members) {
     const spentData = getSpentData(null, member.email);
-    const monthlyCounts = spentData.monthlyCounts || initialMonthlyCounts;
     const tr = table.insertRow();
     tr.insertCell().innerText = member.names[0];
-    for (const count of monthlyCounts) {
-      const td = tr.insertCell();
-      td.innerText = count || "";
+    for (const count of spentData.monthlyCounts) {
+      tr.insertCell().innerText = count || "";
     }
     tr.insertCell().innerText = spentData.totalCount;
     tr.insertCell().innerText = getAvailableValue(member.email) - getSpentData(thisYear, member.email).totalCount;
@@ -263,9 +266,8 @@ function buildMultipleTable() {
   const thead = table.createTHead();
   const row = thead.insertRow(0);
   const headers = ["Name", ...MONTH_NAMES, "Spent", "Avail"];
-  for (let i = 0; i < headers.length; i++) {
-    cell = row.insertCell(i);
-    cell.outerHTML = `<th>${headers[i]}</th>`;
+  for (const header of headers) {
+    row.insertCell().outerHTML = `<th>${header}</th>`;
   }
 }
 
@@ -415,13 +417,17 @@ async function getAvailableData() {
 }
 
 async function downloadSheet() {
-  const downloadBtn = document.getElementById("download");
+  const downloadBtn = document.getElementById("download-btn");
   downloadBtn.disabled = true;
   downloadBtn.textContent = "Exporting...";
   try {
     const accessToken = getAccessToken();
-    const query = new URLSearchParams({ access_token: accessToken });
+    const query = new URLSearchParams({ access_token: accessToken, year: getSelectedYear() });
     const response = await fetch(`${EXPORT_SHEET_URL}?${query}`);
+    if (!response.ok) {
+      const json = await response.json();
+      throw new Error(json.error_description);
+    }
     const filename = response.headers.get("Content-Disposition").split('"')[1];
     const fileBlob = await response.blob();
     const url = URL.createObjectURL(fileBlob);
