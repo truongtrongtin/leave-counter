@@ -3,7 +3,7 @@
   "type": "module",
   "scripts": {
     "dev": "npm-watch start",
-    "start": "env-cmd functions-framework --target=exportLeavesToSheet"
+    "start": "env-cmd functions-framework --target=exportSheet"
   },
   "watch": {
     "start": "*.js"

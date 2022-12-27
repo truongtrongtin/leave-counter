@@ -80,7 +80,7 @@ async function main() {
   if (isAdmin) {
     showModeSelect();
     buildAndShowMemberSelect();
-    // showDownloadButton();
+    showDownloadButton();
   }
   buildAndShowYearSelect();
   getAndShowRandomQuote();
@@ -361,16 +361,19 @@ async function getCalendarEvents() {
 function changeMode() {
   const mode = document.querySelector("input[name='mode']:checked").value;
   const memberSelect = document.getElementById("member-select");
+  const downloadButton = document.getElementById("download-btn");
   const singleSection = document.getElementById("single-section");
   const multipleSection = document.getElementById("multiple-section");
   switch (mode) {
     case "single":
       memberSelect.disabled = false;
+      downloadButton.disabled = true;
       singleSection.classList.remove("hidden");
       multipleSection.classList.add("hidden");
       break;
     case "multiple":
       memberSelect.disabled = true;
+      downloadButton.disabled = false;
       singleSection.classList.add("hidden");
       multipleSection.classList.remove("hidden");
       break;
