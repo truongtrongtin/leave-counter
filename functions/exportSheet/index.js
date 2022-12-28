@@ -125,6 +125,11 @@ async function getUserInfo(accessToken) {
 }
 
 async function getCalendarAccessToken() {
+  if (calendarAccessToken) {
+    console.log("use cached access token");
+    return calendarAccessToken;
+  }
+  console.log("request new access token");
   try {
     const accessTokenResponse = await fetch("https://oauth2.googleapis.com/token", {
       method: "POST",
@@ -138,22 +143,17 @@ async function getCalendarAccessToken() {
     const tokenObject = await accessTokenResponse.json();
     if (!accessTokenResponse.ok) throw tokenObject;
     calendarAccessToken = tokenObject.access_token;
+    return calendarAccessToken;
   } catch (error) {
     throw error;
   }
 }
 
 async function getCalendarEvents(year) {
-  if (calendarAccessToken) {
-    console.log("use cached access token");
-  } else {
-    console.log("request new access token");
-    await getCalendarAccessToken();
-  }
   spentObject = {};
   try {
+    const accessToken = await getCalendarAccessToken();
     const query = new URLSearchParams({
-      access_token: calendarAccessToken,
       timeMin: new Date(year, 0, 1).toISOString(),
       timeMax: new Date(year + 1, 0, 1).toISOString(),
       q: "off",
@@ -165,7 +165,7 @@ async function getCalendarEvents(year) {
     let events = [];
     do {
       const response = await fetch(`${endpoint}?${query}`, {
-        headers: { Authorization: `Bearer ${calendarAccessToken}` },
+        headers: { Authorization: `Bearer ${accessToken}` },
       });
       const data = await response.json();
       if (!response.ok) throw data;

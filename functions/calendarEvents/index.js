@@ -1,7 +1,5 @@
 import * as functions from "@google-cloud/functions-framework";
 
-let calendarAccessToken = "";
-
 functions.http("calendarEvents", async (req, res) => {
   res.set("Access-Control-Allow-Origin", "*");
 
@@ -39,7 +37,13 @@ async function getUserInfo(accessToken) {
   }
 }
 
+let calendarAccessToken = "";
 async function getCalendarAccessToken() {
+  if (calendarAccessToken) {
+    console.log("use cached access token");
+    return calendarAccessToken;
+  }
+  console.log("request new access token");
   try {
     const accessTokenResponse = await fetch("https://oauth2.googleapis.com/token", {
       method: "POST",
@@ -53,6 +57,7 @@ async function getCalendarAccessToken() {
     const tokenObject = await accessTokenResponse.json();
     if (!accessTokenResponse.ok) throw tokenObject;
     calendarAccessToken = tokenObject.access_token;
+    return calendarAccessToken;
   } catch (error) {
     throw error;
   }
@@ -60,17 +65,12 @@ async function getCalendarAccessToken() {
 
 async function getCalendarEvents(query) {
   try {
-    if (calendarAccessToken) {
-      console.log("use cached access token");
-    } else {
-      console.log("request new access token");
-      await getCalendarAccessToken();
-    }
+    const accessToken = await getCalendarAccessToken();
     const endpoint = `https://www.googleapis.com/calendar/v3/calendars/${process.env.CALENDAR_ID}/events`;
     let events = [];
     do {
       const response = await fetch(`${endpoint}?${query}`, {
-        headers: { Authorization: `Bearer ${calendarAccessToken}` },
+        headers: { Authorization: `Bearer ${accessToken}` },
       });
       const data = await response.json();
       if (!response.ok) throw data;
@@ -79,8 +79,6 @@ async function getCalendarEvents(query) {
     } while (query.get("pageToken"));
     return events;
   } catch (error) {
-    await getCalendarAccessToken();
-    await getCalendarEvents(query);
     throw error;
   }
 }

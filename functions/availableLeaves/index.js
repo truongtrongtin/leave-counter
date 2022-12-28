@@ -1,7 +1,5 @@
 import * as functions from "@google-cloud/functions-framework";
 
-let sheetAccessToken = "";
-
 functions.http("availableLeaves", async (req, res) => {
   res.set("Access-Control-Allow-Origin", "*");
 
@@ -45,7 +43,13 @@ async function getUserInfo(accessToken) {
   }
 }
 
+let sheetAccessToken = "";
 async function getSheetAccessToken() {
+  if (sheetAccessToken) {
+    console.log("use cached access token");
+    return sheetAccessToken;
+  }
+  console.log("request new access token");
   try {
     const accessTokenResponse = await fetch("https://oauth2.googleapis.com/token", {
       method: "POST",
@@ -59,6 +63,7 @@ async function getSheetAccessToken() {
     const tokenObject = await accessTokenResponse.json();
     if (!accessTokenResponse.ok) throw tokenObject;
     sheetAccessToken = tokenObject.access_token;
+    return sheetAccessToken;
   } catch (error) {
     throw error;
   }
@@ -66,24 +71,17 @@ async function getSheetAccessToken() {
 
 async function getSheetValues() {
   try {
-    if (sheetAccessToken) {
-      console.log("use cached access token");
-    } else {
-      console.log("request new access token");
-      await getSheetAccessToken();
-    }
+    const accessToken = await getSheetAccessToken();
     const sheetValuesQuery = new URLSearchParams();
     sheetValuesQuery.append("ranges", "Sheet1!B1:1");
     sheetValuesQuery.append("ranges", "Sheet1!B19:19");
     const sheetValuesResponse = await fetch(`https://sheets.googleapis.com/v4/spreadsheets/${process.env.SPREADSHEET_ID}/values:batchGet?${sheetValuesQuery}`, {
-      headers: { Authorization: `Bearer ${sheetAccessToken}` },
+      headers: { Authorization: `Bearer ${accessToken}` },
     });
     const sheetValues = await sheetValuesResponse.json();
     if (!sheetValuesResponse.ok) throw sheetValues;
     return sheetValues;
   } catch (error) {
-    await getSheetAccessToken();
-    await getSheetValues();
     throw error;
   }
 }
