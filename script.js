@@ -74,6 +74,7 @@ if (localStorage.getItem("oauth2-params")) {
 }
 
 async function main() {
+  reloadPageWhenTokenExpired();
   await getMe();
   if (!currentUser) return;
   const isAdmin = getLocalMember(currentUser.email)?.isAdmin;
@@ -98,6 +99,13 @@ async function main() {
   showAvailableDays();
   buildSingleSpentTable();
   buildMultipleTable();
+}
+
+function reloadPageWhenTokenExpired() {
+  const tokenString = localStorage.getItem("oauth2-params");
+  if (!tokenString) return;
+  const expireTime = Number(JSON.parse(tokenString).expires_in);
+  setTimeout(location.reload, expireTime * 1000);
 }
 
 function buildThemeSelect() {
