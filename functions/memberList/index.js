@@ -1,6 +1,8 @@
 import * as functions from "@google-cloud/functions-framework";
 
-functions.http("availableLeaves", async (req, res) => {
+let sheetAccessToken = "";
+
+functions.http("memberList", async (req, res) => {
   res.set("Access-Control-Allow-Origin", "*");
 
   const query = new URLSearchParams(req.query);
@@ -11,22 +13,24 @@ functions.http("availableLeaves", async (req, res) => {
       message: "Required parameter is missing",
     });
   }
-  let userInfo, sheetValues;
   try {
-    [userInfo, sheetValues] = await Promise.all([getUserInfo(clientAccessToken), getSheetValues()]);
+    const [userInfo, sheetValues] = await Promise.all([getUserInfo(clientAccessToken), getSheetValues()]);
+    console.log(userInfo.name);
+    const [header, ...rows] = sheetValues.values;
+    const result = [];
+    for (const rowValues of rows) {
+      const obj = {};
+      for (let i = 0; i < rowValues.length; i++) {
+        const key = header[i];
+        const value = rowValues[i];
+        obj[key] = value;
+      }
+      result.push(obj);
+    }
+    return res.status(200).json(result);
   } catch (error) {
     return res.status(400).json(error);
   }
-
-  console.log(userInfo.name);
-  const memberCodes = sheetValues.valueRanges[0].values[0];
-  const allAvailableLeaves = sheetValues.valueRanges[1].values[0];
-  const result = {};
-  for (let i = 0; i < memberCodes.length; i++) {
-    const email = memberCodes[i] + "@localizedirect.com";
-    result[email] = Number(allAvailableLeaves[i]) || 0;
-  }
-  return res.status(200).json(result);
 });
 
 async function getUserInfo(accessToken) {
@@ -43,13 +47,7 @@ async function getUserInfo(accessToken) {
   }
 }
 
-let sheetAccessToken = "";
 async function getSheetAccessToken() {
-  if (sheetAccessToken) {
-    console.log("use cached access token");
-    return sheetAccessToken;
-  }
-  console.log("request new access token");
   try {
     const accessTokenResponse = await fetch("https://oauth2.googleapis.com/token", {
       method: "POST",
@@ -63,7 +61,6 @@ async function getSheetAccessToken() {
     const tokenObject = await accessTokenResponse.json();
     if (!accessTokenResponse.ok) throw tokenObject;
     sheetAccessToken = tokenObject.access_token;
-    return sheetAccessToken;
   } catch (error) {
     throw error;
   }
@@ -71,12 +68,19 @@ async function getSheetAccessToken() {
 
 async function getSheetValues() {
   try {
-    const accessToken = await getSheetAccessToken();
-    const sheetValuesQuery = new URLSearchParams();
-    sheetValuesQuery.append("ranges", "Sheet1!B1:1");
-    sheetValuesQuery.append("ranges", "Sheet1!B19:19");
-    const sheetValuesResponse = await fetch(`https://sheets.googleapis.com/v4/spreadsheets/${process.env.SPREADSHEET_ID}/values:batchGet?${sheetValuesQuery}`, {
-      headers: { Authorization: `Bearer ${accessToken}` },
+    if (sheetAccessToken) {
+      console.log("use cached access token");
+    } else {
+      console.log("request new access token");
+      await getSheetAccessToken();
+    }
+    const sheetName = "2023";
+    const query = new URLSearchParams({
+      valueRenderOption: "UNFORMATTED_VALUE",
+      dateTimeRenderOption: "FORMATTED_STRING",
+    });
+    const sheetValuesResponse = await fetch(`https://sheets.googleapis.com/v4/spreadsheets/${process.env.SPREADSHEET_ID}/values/${sheetName}?${query}`, {
+      headers: { Authorization: `Bearer ${sheetAccessToken}` },
     });
     const sheetValues = await sheetValuesResponse.json();
     if (!sheetValuesResponse.ok) throw sheetValues;

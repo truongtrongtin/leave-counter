@@ -6,7 +6,7 @@ changeTheme();
 darkScheme.onchange = changeTheme;
 
 let currentUser = null,
-  availableObject = {},
+  members = [],
   spentObject = {
     // [email]: {
     //   [year]: {
@@ -20,41 +20,8 @@ const today = new Date();
 const thisYear = today.getFullYear();
 const CLIENT_ID = "81206403759-o2s2tkv3cl58c86njqh90crd8vnj6b82.apps.googleusercontent.com";
 const CALENDAR_EVENTS_URL = "https://asia-southeast1-my-project-1540367072726.cloudfunctions.net/calendar-events";
-const AVAILABLE_LEAVES_URL = "https://asia-southeast1-my-project-1540367072726.cloudfunctions.net/available-leaves";
+const MEMBERS_LIST_URL = "https://asia-southeast1-my-project-1540367072726.cloudfunctions.net/member-list";
 const EXPORT_SHEET_URL = "https://asia-southeast1-my-project-1540367072726.cloudfunctions.net/exportSheet";
-const members = [
-  { email: "ld@localizedirect.com", names: ["Lynh"] },
-  { email: "tn@localizedirect.com", names: ["Truong"] },
-  { email: "gn@localizedirect.com", names: ["Giang"], isAdmin: true },
-  { email: "dng@localizedirect.com", names: ["Duong Nguyen"] },
-  { email: "vtl@localizedirect.com", names: ["Trong"] },
-  { email: "kp@localizedirect.com", names: ["Khanh Pham"] },
-  { email: "th@localizedirect.com", names: ["Tan"] },
-  { email: "tin@localizedirect.com", names: ["Tin"], isAdmin: true },
-  { email: "hh@localizedirect.com", names: ["Hieu Huynh"] },
-  { email: "sn@localizedirect.com", names: ["Sang"] },
-  { email: "dp@localizedirect.com", names: ["Dung"] },
-  { email: "qv@localizedirect.com", names: ["Quang Vo"] },
-  { email: "pv@localizedirect.com", names: ["Phu"] },
-  { email: "pia@localizedirect.com", names: ["Pia"], isAdmin: true },
-  { email: "ldv@localizedirect.com", names: ["Long"] },
-  { email: "hm@localizedirect.com", names: ["Huong"] },
-  { email: "tc@localizedirect.com", names: ["Steve"] },
-  { email: "tnn@localizedirect.com", names: ["Thy"] },
-  { email: "nn@localizedirect.com", names: ["Andy", "Nha"] },
-  { email: "nnc@localizedirect.com", names: ["Jason"] },
-  { email: "cm@localizedirect.com", names: ["Chau Nguyen"] },
-  { email: "sla@localizedirect.com", names: ["Son", "Son Le"] },
-  { email: "qh@localizedirect.com", names: ["Quang Huynh"] },
-  { email: "dpn@localizedirect.com", names: ["Duong Phung"] },
-  { email: "kl@localizedirect.com", names: ["Khanh Le"] },
-  { email: "tp@localizedirect.com", names: ["Thanh", "Thanh Phan"] },
-  { email: "np@localizedirect.com", names: ["Ngan", "Ngan Phan"] },
-  { email: "qt@localizedirect.com", names: ["Quoc", "Quoc Truong"] },
-  { email: "cdm@localizedirect.com", names: ["Chau Dang"] },
-  { email: "mn@localizedirect.com", names: ["Minh", "Minh Nguyen"] },
-  { email: "cnp@localizedirect.com", names: ["Cuong Nguyen"] },
-];
 const MONTH_NAMES = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
 const initialMonthlyCounts = Array(12).fill(0);
 
@@ -77,24 +44,26 @@ async function main() {
   reloadPageWhenTokenExpired();
   await getMe();
   if (!currentUser) return;
-  const isAdmin = getLocalMember(currentUser.email)?.isAdmin;
+  buildAndShowYearSelect();
+  getAndShowRandomQuote();
+
+  const remainCountEl = document.getElementById("available-leaves");
+  const spentCountEl = document.getElementById("spent-leaves");
+  let dots = "";
+  const loadingTimerId = setInterval(() => {
+    dots += ".";
+    if (dots.length === 11) dots = "";
+    remainCountEl.innerHTML = spentCountEl.innerHTML = `${dots} loading ${dots}`;
+  }, 100);
+  const [events] = await Promise.all([getCalendarEvents(), getMembers()]);
+  clearInterval(loadingTimerId);
+  buildSpentData(events);
+  const isAdmin = getMemberByEmail(currentUser.email)?.["Admin"];
   if (isAdmin) {
     showModeSelect();
     buildAndShowMemberSelect();
     showDownloadButton();
   }
-  buildAndShowYearSelect();
-  getAndShowRandomQuote();
-
-  const remainCountEl = document.getElementById("available-leaves");
-  let dots = "";
-  const loadingTimerId = setInterval(() => {
-    dots += ".";
-    if (dots.length === 11) dots = "";
-    remainCountEl.innerHTML = `${dots} loading ${dots}`;
-  }, 100);
-  await Promise.all([getCalendarEvents(), getAvailableData()]);
-  clearInterval(loadingTimerId);
   showSpentCount();
   showAvailableDays();
   buildSingleSpentTable();
@@ -143,9 +112,9 @@ function buildAndShowMemberSelect() {
   const memberSelectEl = document.getElementById("member-select");
   for (const member of members) {
     const option = document.createElement("option");
-    option.text = member.names[0];
-    option.value = member.email;
-    if (member.email === currentUser.email) option.selected = true;
+    option.text = member["Name"];
+    option.value = member["Email"];
+    if (member["Email"] === currentUser.email) option.selected = true;
     memberSelectEl.appendChild(option);
   }
   memberSelectEl.classList.remove("hidden");
@@ -195,8 +164,8 @@ async function getMe() {
   }
 }
 
-function getLocalMember(email) {
-  return members.find((member) => member.email === email);
+function getMemberByEmail(email) {
+  return members.find((member) => member["Email"] === email);
 }
 
 function getSelectedEmail() {
@@ -215,7 +184,8 @@ function getSpentData(year, email) {
 
 function getAvailableValue(email) {
   const selectedEmail = email || getSelectedEmail();
-  return availableObject[selectedEmail] || 0;
+  const member = members.find((member) => member["Email"] === selectedEmail);
+  return member["Balance 2023"] || 0;
 }
 
 function generateTimeText(date) {
@@ -261,14 +231,14 @@ function buildMultipleTable() {
   table.replaceChildren();
   // table body
   for (const member of members) {
-    const spentData = getSpentData(null, member.email);
+    const spentData = getSpentData(null, member["Email"]);
     const tr = table.insertRow();
-    tr.insertCell().innerText = member.names[0];
+    tr.insertCell().innerText = member["Name"];
     for (const count of spentData.monthlyCounts) {
       tr.insertCell().innerText = count || "";
     }
     tr.insertCell().innerText = spentData.totalCount;
-    tr.insertCell().innerText = getAvailableValue(member.email) - getSpentData(thisYear, member.email).totalCount;
+    tr.insertCell().innerText = getAvailableValue(member["Email"]) - getSpentData(thisYear, member["Email"]).totalCount;
   }
   // table header
   const thead = table.createTHead();
@@ -280,20 +250,11 @@ function buildMultipleTable() {
 }
 
 async function getCalendarEvents() {
-  let loadingTimerId;
   try {
+    const yearSelectEl = document.getElementById("year-select");
+    yearSelectEl.disabled = true;
     const accessToken = getAccessToken();
     const selectedYear = getSelectedYear();
-    if (spentObject[selectedYear]) return;
-    const spentCountEl = document.getElementById("spent-leaves");
-
-    let dots = "";
-    loadingTimerId = setInterval(() => {
-      dots += ".";
-      if (dots.length === 11) dots = "";
-      spentCountEl.innerHTML = `${dots} loading ${dots}`;
-    }, 100);
-
     const query = new URLSearchParams({
       access_token: accessToken,
       timeMin: new Date(selectedYear, 0, 1).toISOString(),
@@ -304,65 +265,68 @@ async function getCalendarEvents() {
       maxResults: "2500",
     });
     const response = await fetch(`${CALENDAR_EVENTS_URL}?${query}`);
+    yearSelectEl.disabled = false;
     const events = await response.json();
     if (!response.ok) throw new Error(events.error_description);
+    return events;
+  } catch (error) {
+    yearSelectEl.disabled = false;
+    showError(error.message);
+  }
+}
 
-    for (const event of events) {
-      let dayPartText = "",
-        dayPartCount = 0;
-      if (event.summary.includes("morning")) {
-        dayPartText = "Morning";
-        dayPartCount = 0.5;
-      } else if (event.summary.includes("afternoon")) {
-        dayPartText = "Afternoon";
-        dayPartCount = 0.5;
-      } else {
-        dayPartText = "All day";
-        dayPartCount = 1;
-      }
-      const startDate = new Date(event.start.date);
-      const endDate = new Date(event.end.date);
-      const monthlyCountObject = {};
-      let eventDayCount = 0;
-      // date range loop
-      for (let d = new Date(startDate); d < endDate; d.setDate(d.getDate() + 1)) {
-        const month = d.getMonth();
-        if (!monthlyCountObject[month]) monthlyCountObject[month] = 0;
-        monthlyCountObject[month] += dayPartCount;
-        eventDayCount += dayPartCount;
-      }
-
-      endDate.setDate(endDate.getDate() - 1);
-      const reason = event?.extendedProperties?.private?.reason || "";
-      const newEvent = {
-        start: generateTimeText(startDate),
-        end: generateTimeText(endDate),
-        type: dayPartText,
-        count: eventDayCount,
-        description: reason,
-      };
-
-      const eventMemberNames = event.summary
-        .split("(off")[0]
-        .split(",")
-        .map((name) => name.trim());
-      for (const memberName of eventMemberNames) {
-        const foundMember = members.find((m) => m.names.includes(memberName));
-        const email = foundMember ? foundMember.email : memberName;
-        if (!spentObject[selectedYear]) spentObject[selectedYear] = {};
-        if (!spentObject[selectedYear][email]) spentObject[selectedYear][email] = { totalCount: 0, events: [], monthlyCounts: [...initialMonthlyCounts] };
-        spentObject[selectedYear][email].totalCount += eventDayCount;
-        spentObject[selectedYear][email].events.push(newEvent);
-        for (const month in monthlyCountObject) {
-          spentObject[selectedYear][email].monthlyCounts[month] += monthlyCountObject[month];
-        }
-      }
+function buildSpentData(events) {
+  const selectedYear = getSelectedYear();
+  for (const event of events) {
+    let dayPartText = "",
+      dayPartCount = 0;
+    if (event.summary.includes("morning")) {
+      dayPartText = "Morning";
+      dayPartCount = 0.5;
+    } else if (event.summary.includes("afternoon")) {
+      dayPartText = "Afternoon";
+      dayPartCount = 0.5;
+    } else {
+      dayPartText = "All day";
+      dayPartCount = 1;
+    }
+    const startDate = new Date(event.start.date);
+    const endDate = new Date(event.end.date);
+    const monthlyCountObject = {};
+    let eventDayCount = 0;
+    // date range loop
+    for (let d = new Date(startDate); d < endDate; d.setDate(d.getDate() + 1)) {
+      const month = d.getMonth();
+      if (!monthlyCountObject[month]) monthlyCountObject[month] = 0;
+      monthlyCountObject[month] += dayPartCount;
+      eventDayCount += dayPartCount;
     }
 
-    clearInterval(loadingTimerId);
-  } catch (error) {
-    clearInterval(loadingTimerId);
-    showError(error.message);
+    endDate.setDate(endDate.getDate() - 1);
+    const reason = event?.extendedProperties?.private?.reason || "";
+    const newEvent = {
+      start: generateTimeText(startDate),
+      end: generateTimeText(endDate),
+      type: dayPartText,
+      count: eventDayCount,
+      description: reason,
+    };
+
+    const eventMemberNames = event.summary
+      .split("(off")[0]
+      .split(",")
+      .map((name) => name.trim());
+    for (const memberName of eventMemberNames) {
+      const foundMember = members.find((member) => member["Name"] === memberName);
+      const email = foundMember ? foundMember["Email"] : memberName;
+      if (!spentObject[selectedYear]) spentObject[selectedYear] = {};
+      if (!spentObject[selectedYear][email]) spentObject[selectedYear][email] = { totalCount: 0, events: [], monthlyCounts: [...initialMonthlyCounts] };
+      spentObject[selectedYear][email].totalCount += eventDayCount;
+      spentObject[selectedYear][email].events.push(newEvent);
+      for (const month in monthlyCountObject) {
+        spentObject[selectedYear][email].monthlyCounts[month] += monthlyCountObject[month];
+      }
+    }
   }
 }
 
@@ -391,7 +355,19 @@ function changeMode() {
 }
 
 async function changeYear() {
-  await getCalendarEvents();
+  const selectedYear = getSelectedYear();
+  if (!spentObject[selectedYear]) {
+    const spentCountEl = document.getElementById("spent-leaves");
+    let dots = "";
+    const loadingTimerId = setInterval(() => {
+      dots += ".";
+      if (dots.length === 11) dots = "";
+      spentCountEl.innerHTML = `${dots} loading ${dots}`;
+    }, 100);
+    const events = await getCalendarEvents();
+    clearInterval(loadingTimerId);
+    buildSpentData(events);
+  }
   showSpentCount();
   buildSingleSpentTable();
   buildMultipleTable();
@@ -416,12 +392,12 @@ async function getAndShowRandomQuote() {
   }
 }
 
-async function getAvailableData() {
+async function getMembers() {
   try {
     const accessToken = getAccessToken();
     const query = new URLSearchParams({ access_token: accessToken });
-    const response = await fetch(`${AVAILABLE_LEAVES_URL}?${query}`);
-    availableObject = await response.json();
+    const response = await fetch(`${MEMBERS_LIST_URL}?${query}`);
+    members = await response.json();
   } catch (error) {
     throw error;
   }
