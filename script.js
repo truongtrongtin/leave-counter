@@ -19,9 +19,7 @@ let currentUser = null,
 const today = new Date();
 const thisYear = today.getFullYear();
 const CLIENT_ID = "81206403759-o2s2tkv3cl58c86njqh90crd8vnj6b82.apps.googleusercontent.com";
-const CALENDAR_EVENTS_URL = "https://asia-southeast1-my-project-1540367072726.cloudfunctions.net/calendar-events";
-const MEMBERS_LIST_URL = "https://asia-southeast1-my-project-1540367072726.cloudfunctions.net/member-list";
-const EXPORT_SHEET_URL = "https://asia-southeast1-my-project-1540367072726.cloudfunctions.net/exportSheet";
+const API_ENDPOINT = "https://asia-southeast1-my-project-1540367072726.cloudfunctions.net/leave-counter-server";
 const MONTH_NAMES = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
 const initialMonthlyCounts = Array(12).fill(0);
 
@@ -264,7 +262,7 @@ async function getCalendarEvents() {
       singleEvents: "true",
       maxResults: "2500",
     });
-    const response = await fetch(`${CALENDAR_EVENTS_URL}?${query}`);
+    const response = await fetch(`${API_ENDPOINT}/events?${query}`);
     yearSelectEl.disabled = false;
     const events = await response.json();
     if (!response.ok) throw new Error(events.error_description);
@@ -396,7 +394,7 @@ async function getMembers() {
   try {
     const accessToken = getAccessToken();
     const query = new URLSearchParams({ access_token: accessToken });
-    const response = await fetch(`${MEMBERS_LIST_URL}?${query}`);
+    const response = await fetch(`${API_ENDPOINT}/users?${query}`);
     members = await response.json();
   } catch (error) {
     throw error;
@@ -410,7 +408,7 @@ async function downloadSheet() {
   try {
     const accessToken = getAccessToken();
     const query = new URLSearchParams({ access_token: accessToken, year: getSelectedYear() });
-    const response = await fetch(`${EXPORT_SHEET_URL}?${query}`);
+    const response = await fetch(`${API_ENDPOINT}/export?${query}`);
     if (!response.ok) {
       const json = await response.json();
       throw new Error(json.error_description);
