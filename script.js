@@ -60,7 +60,6 @@ async function main() {
   if (isAdmin) {
     showModeSelect();
     buildAndShowMemberSelect();
-    showDownloadButton();
   }
   showSpentCount();
   showAvailableDays();
@@ -100,10 +99,6 @@ function changeTheme() {
 
 function showModeSelect() {
   document.getElementById("mode-select").classList.remove("hidden");
-}
-
-function showDownloadButton() {
-  document.getElementById("download-btn").classList.remove("hidden");
 }
 
 function buildAndShowMemberSelect() {
@@ -331,19 +326,16 @@ function buildSpentData(events) {
 function changeMode() {
   const mode = document.querySelector("input[name='mode']:checked").value;
   const memberSelect = document.getElementById("member-select");
-  const downloadButton = document.getElementById("download-btn");
   const singleSection = document.getElementById("single-section");
   const multipleSection = document.getElementById("multiple-section");
   switch (mode) {
     case "single":
       memberSelect.disabled = false;
-      downloadButton.disabled = true;
       singleSection.classList.remove("hidden");
       multipleSection.classList.add("hidden");
       break;
     case "multiple":
       memberSelect.disabled = true;
-      downloadButton.disabled = false;
       singleSection.classList.add("hidden");
       multipleSection.classList.remove("hidden");
       break;
@@ -399,32 +391,6 @@ async function getMembers() {
   } catch (error) {
     throw error;
   }
-}
-
-async function downloadSheet() {
-  const downloadBtn = document.getElementById("download-btn");
-  downloadBtn.disabled = true;
-  downloadBtn.textContent = "Exporting...";
-  try {
-    const accessToken = getAccessToken();
-    const query = new URLSearchParams({ access_token: accessToken, year: getSelectedYear() });
-    const response = await fetch(`${API_ENDPOINT}/export?${query}`);
-    if (!response.ok) {
-      const json = await response.json();
-      throw new Error(json.error_description);
-    }
-    const filename = response.headers.get("Content-Disposition").split('"')[1];
-    const fileBlob = await response.blob();
-    const url = URL.createObjectURL(fileBlob);
-    const anchor = document.createElement("a");
-    anchor.href = url;
-    anchor.download = filename;
-    anchor.click();
-  } catch (error) {
-    showError(error.message);
-  }
-  downloadBtn.disabled = false;
-  downloadBtn.textContent = "Export";
 }
 
 function oauth2SignIn() {
