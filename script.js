@@ -118,8 +118,8 @@ function buildAndShowYearSelect() {
   const yearSelectEl = document.getElementById("year-select");
   const startYear = 2019;
   for (let year = startYear; year <= thisYear + 1; year++) {
-    // only show next year option on this year December
-    if (year === thisYear + 1 && today.getMonth() !== 11) break;
+    // only show next year option on this year September
+    if (year === thisYear + 1 && today.getMonth() < 9) break;
     const option = document.createElement("option");
     option.text = option.value = year;
     if (year === thisYear) option.selected = true;
@@ -388,8 +388,9 @@ async function getMembers() {
     const query = new URLSearchParams({ access_token: accessToken });
     const response = await fetch(`${API_ENDPOINT}/users?${query}`);
     members = await response.json();
+    if (!response.ok) throw members;
   } catch (error) {
-    throw error;
+    showError(error.message);
   }
 }
 
