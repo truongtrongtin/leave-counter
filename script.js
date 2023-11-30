@@ -178,7 +178,7 @@ function getSpentData(year, email) {
 function getAvailableValue(email) {
   const selectedEmail = email || getSelectedEmail();
   const member = members.find((member) => member["Email"] === selectedEmail);
-  return member["Balance 2023"] || 0;
+  return member["Balance"] || 0;
 }
 
 function generateTimeText(date) {
