@@ -19,7 +19,7 @@ let currentUser = null,
 const today = new Date();
 const thisYear = today.getFullYear();
 const CLIENT_ID = "81206403759-o2s2tkv3cl58c86njqh90crd8vnj6b82.apps.googleusercontent.com";
-const API_ENDPOINT = "https://asia-southeast1-my-project-1540367072726.cloudfunctions.net/leave-counter-server";
+const API_ENDPOINT = "https://us-west1-my-project-1540367072726.cloudfunctions.net/leave-counter-server";
 const MONTH_NAMES = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
 const initialMonthlyCounts = Array(12).fill(0);
 
