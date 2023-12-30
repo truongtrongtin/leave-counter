@@ -177,8 +177,9 @@ function getSpentData(year, email) {
 
 function getAvailableValue(email) {
   const selectedEmail = email || getSelectedEmail();
-  const member = members.find((member) => member["Email"] === selectedEmail);
-  return member["Balance"] || 0;
+  const foundMember = members.find((member) => member["Email"] === selectedEmail);
+  if (!foundMember) return 0;
+  return foundMember["Balance"];
 }
 
 function generateTimeText(date) {
