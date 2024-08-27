@@ -374,8 +374,8 @@ async function getAndShowRandomQuote() {
   const quoteContent = document.getElementById("quote-content");
   const quoteAuthor = document.getElementById("quote-author");
   try {
-    const response = await fetch("https://api.quotable.io/random");
-    const quote = await response.json();
+    const response = await fetch("https://api.quotable.io/quotes/random");
+    const [quote] = await response.json();
     quoteContent.innerHTML = quote.content;
     quoteAuthor.innerHTML = quote.author;
   } catch (error) {
@@ -408,7 +408,7 @@ function oauth2SignIn() {
     response_type: "token",
     hd: "localizedirect.com",
   });
-  location = `${endpoint}?${query}`;
+  location.href = `${endpoint}?${query}`;
 }
 
 function oauth2SignOut() {
