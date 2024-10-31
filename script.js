@@ -406,7 +406,7 @@ function oauth2SignIn() {
     scope: "profile email",
     state: csrfToken,
     response_type: "token",
-    hd: "localizedirect.com",
+    hd: "gridly.com",
   });
   location.href = `${endpoint}?${query}`;
 }
