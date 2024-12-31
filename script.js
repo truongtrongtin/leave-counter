@@ -374,10 +374,13 @@ async function getAndShowRandomQuote() {
   const quoteContent = document.getElementById("quote-content");
   const quoteAuthor = document.getElementById("quote-author");
   try {
-    const response = await fetch("https://api.quotable.io/quotes/random");
-    const [quote] = await response.json();
-    quoteContent.innerHTML = quote.content;
-    quoteAuthor.innerHTML = quote.author;
+    const accessToken = getAccessToken();
+    const query = new URLSearchParams({ access_token: accessToken });
+    const response = await fetch(`${API_ENDPOINT}/quotes?${query}`);
+    const data = await response.json();
+    if (!response.ok) throw data;
+    quoteContent.innerHTML = data[0].quote;
+    quoteAuthor.innerHTML = data[0].author;
   } catch (error) {
     quoteContent.innerHTML = error.message;
   }
