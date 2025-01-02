@@ -410,6 +410,7 @@ function oauth2SignIn() {
     state: csrfToken,
     response_type: "token",
     hd: "gridly.com",
+    prompt: "select_account",
   });
   location.href = `${endpoint}?${query}`;
 }
