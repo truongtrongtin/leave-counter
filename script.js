@@ -297,13 +297,12 @@ function buildSpentData(events) {
     }
 
     endDate.setDate(endDate.getDate() - 1);
-    const reason = event?.extendedProperties?.private?.reason || "";
     const newEvent = {
       start: generateTimeText(startDate),
       end: generateTimeText(endDate),
       type: dayPartText,
       count: eventDayCount,
-      description: reason,
+      description: event.description || "",
     };
 
     const eventMemberNames = event.summary
