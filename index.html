@@ -13,7 +13,7 @@
   </head>
 
   <body>
-    <span>Theme:</span>
+    <label for="theme-select">Theme:</label>
     <select id="theme-select" onchange="changeTheme()"></select>
     <h1>Gridly VN leave counter</h1>
     <button id="get-spent-leaves-btn" class="hidden" onclick="main()">Count my leaves now!</button>
@@ -27,7 +27,9 @@
         <label><input type="radio" name="mode" value="multiple" onchange="changeMode()" />Multiple</label>
       </p>
       <p>
+        <label for="year-select" hidden>Year</label>
         <select id="year-select" class="hidden" onchange="changeYear()"></select>
+        <label for="member-select" hidden>Member</label>
         <select id="member-select" class="hidden" onchange="changeMember()"></select>
       </p>
       <section id="single-section">
