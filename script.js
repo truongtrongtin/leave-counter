@@ -153,7 +153,7 @@ async function getMe() {
     document.getElementById("welcome").innerHTML = `Welcome <b>${currentUser.given_name}</b>!`;
     document.getElementById("signed-in-section").classList.remove("hidden");
   } catch (error) {
-    showError(error.message);
+    showError(error.message || error.error);
   }
 }
 
@@ -253,10 +253,8 @@ async function getCalendarEvents() {
       access_token: accessToken,
       timeMin: new Date(selectedYear, 0, 1).toISOString(),
       timeMax: new Date(selectedYear + 1, 0, 1).toISOString(),
-      q: "off",
       orderBy: "startTime",
       singleEvents: "true",
-      maxResults: "2500",
     });
     const response = await fetch(`${API_ENDPOINT}/events?${query}`);
     yearSelectEl.disabled = false;
@@ -265,7 +263,7 @@ async function getCalendarEvents() {
     return events;
   } catch (error) {
     yearSelectEl.disabled = false;
-    showError(error.message);
+    showError(error.message || error.error);
   }
 }
 
@@ -393,7 +391,7 @@ async function getMembers() {
     members = await response.json();
     if (!response.ok) throw members;
   } catch (error) {
-    showError(error.message);
+    showError(error.message || error.error);
   }
 }
 
